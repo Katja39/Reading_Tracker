@@ -1,6 +1,5 @@
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
@@ -47,11 +46,8 @@ unlinked.ds
 unlinked_spec.ds
 
 # Android related
-**/android/**/gradle-wrapper.jar
 .gradle/
 **/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
@@ -109,6 +105,14 @@ coverage/
 
 # Symbols
 app.*.symbols
+
+# Web-only Flutter app in reading_tracker
+/reading_tracker/android/
+/reading_tracker/ios/
+/reading_tracker/linux/
+/reading_tracker/macos/
+/reading_tracker/windows/
+!/reading_tracker/pubspec.lock
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
