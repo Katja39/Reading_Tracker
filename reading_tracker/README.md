@@ -1,17 +1,55 @@
 # reading_tracker
 
-A new Flutter project.
+Reading Tracker is a Flutter web application with a REST backend and PostgreSQL.
 
-## Getting Started
+## Local Setup
 
-This project is a starting point for a Flutter application.
+1. Copy `.env.example` to `.env` and adjust values as required.
 
-A few resources to get you started if this is your first Flutter project:
+```powershell
+docker compose up --build
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+If the database schema has changed, restart the containers with a fresh volume:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+docker compose down -v
+docker compose up --build
+```
+
+3. Install Flutter dependencies:
+
+```powershell
+flutter pub get
+```
+
+4. Run the web app against the local API:
+
+```powershell
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
+```
+
+## Android
+
+For local testing on an emulator or device:
+
+```powershell
+flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8080
+```
+
+For a physical device on the same network, use the host machine IP instead of `10.0.2.2`, for example:
+
+```powershell
+flutter run -d android --dart-define=API_BASE_URL=http://192.168.178.34:8080
+```
+
+Build APK:
+
+```powershell
+flutter build apk --dart-define=API_BASE_URL=https://your-api.example.com
+```
+
+## Services
+
+- PostgreSQL: `localhost:5432`
+- REST API: `http://localhost:8080`

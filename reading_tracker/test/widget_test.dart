@@ -1,30 +1,80 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:reading_tracker/main.dart';
+import 'package:reading_tracker/app.dart';
+import 'package:reading_tracker/models/book.dart';
+import 'package:reading_tracker/repositories/book_repository.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('renders add button and book list', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('New Book'), findsOneWidget);
+    expect(find.text('Title'), findsOneWidget);
+    expect(find.text('Author'), findsOneWidget);
+    expect(find.text('Status'), findsOneWidget);
+    expect(find.text('No books available yet.'), findsNothing);
+    expect(find.text('Reload'), findsOneWidget);
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Author A'), findsOneWidget);
+    expect(find.text('reading'), findsOneWidget);
+    expect(find.text('Second Book'), findsOneWidget);
+    expect(find.text('Second Author'), findsOneWidget);
+    expect(find.text('unread'), findsOneWidget);
   });
+}
+
+class FakeBookRepository implements BookRepository {
+  @override
+  Future<Book> createBook({
+    required String title,
+    required String author,
+    required String status,
+  }) async {
+    return Book(
+      id: 'book-1',
+      userId: 'user-1',
+      title: title,
+      author: author,
+      status: status,
+    );
+  }
+
+  @override
+  Future<List<Book>> fetchBooks() async {
+    return const [
+      Book(
+        id: 'book-1',
+        userId: 'user-1',
+        title: 'Alpha Book',
+        author: 'Author A',
+        status: 'reading',
+      ),
+      Book(
+        id: 'book-2',
+        userId: 'user-1',
+        title: 'Second Book',
+        author: 'Second Author',
+        status: 'unread',
+      ),
+    ];
+  }
+
+  @override
+  Future<Book> updateBookAuthor({
+    required String id,
+    required String author,
+  }) async {
+    return Book(
+      id: id,
+      userId: 'user-1',
+      title: 'Sample Book',
+      author: author,
+      status: 'reading',
+    );
+  }
 }

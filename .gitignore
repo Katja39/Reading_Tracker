@@ -106,8 +106,7 @@ coverage/
 # Symbols
 app.*.symbols
 
-# Web-only Flutter app in reading_tracker
-/reading_tracker/android/
+# Flutter app in reading_tracker
 /reading_tracker/ios/
 /reading_tracker/linux/
 /reading_tracker/macos/
@@ -121,3 +120,4 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+/reading_tracker/backend_api/app/__pycache__
