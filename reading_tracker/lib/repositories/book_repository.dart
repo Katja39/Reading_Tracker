@@ -7,10 +7,19 @@ abstract class BookRepository {
     required String title,
     required String author,
     required String status,
+    double? rating,
   });
 
-  Future<Book> updateBookAuthor({
+  Future<Book> updateBook({
     required String id,
+    required String userId,
+    required String title,
     required String author,
+    required String status,
+    double? rating,
+  });
+
+  Future<void> deleteBook({
+    required String id,
   });
 }

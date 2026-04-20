@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/book.dart';
+import 'book_detail_page.dart';
 import '../repositories/book_repository.dart';
 
 class BookPage extends StatefulWidget {
@@ -84,6 +85,7 @@ class _BookPageState extends State<BookPage> {
     final title = submitted.title;
     final author = submitted.author;
     final status = submitted.status;
+    final rating = submitted.rating;
 
     if (title.isEmpty) {
       setState(() {
@@ -109,6 +111,7 @@ class _BookPageState extends State<BookPage> {
         title: title,
         author: author,
         status: status,
+        rating: rating,
       );
 
       if (!mounted) {
@@ -143,6 +146,37 @@ class _BookPageState extends State<BookPage> {
           ),
     );
     return sortedBooks;
+  }
+
+  Future<void> _openBookDetails(Book book) async {
+    final result = await Navigator.of(context).push<BookDetailResult>(
+      MaterialPageRoute<BookDetailResult>(
+        builder: (_) => BookDetailPage(
+          book: book,
+          repository: widget.repository,
+          statuses: _bookStatuses,
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      if (result.isDeleted) {
+        _books = _books
+            .where((entry) => entry.id != result.deletedBookId)
+            .toList();
+        return;
+      }
+
+      final updatedBook = result.updatedBook!;
+      final updatedBooks = _books
+          .map((entry) => entry.id == updatedBook.id ? updatedBook : entry)
+          .toList();
+      _books = _sortBooks(updatedBooks);
+    });
   }
 
   Widget _buildStartTab(ThemeData theme) {
@@ -265,22 +299,35 @@ class _BookPageState extends State<BookPage> {
                                             const Divider(height: 24),
                                         itemBuilder: (context, index) {
                                           final entry = books[index];
-                                          return Row(
-                                            children: [
-                                              Expanded(
-                                                flex: 2,
-                                                child: Text(entry.title),
+                                          return InkWell(
+                                            onTap: () =>
+                                                _openBookDetails(entry),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 10,
                                               ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                flex: 2,
-                                                child: Text(entry.author),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    flex: 2,
+                                                    child: Text(entry.title),
+                                                  ),
+                                                  const SizedBox(width: 16),
+                                                  Expanded(
+                                                    flex: 2,
+                                                    child: Text(entry.author),
+                                                  ),
+                                                  const SizedBox(width: 16),
+                                                  Expanded(
+                                                    child: Text(entry.status),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Text(entry.status),
-                                              ),
-                                            ],
+                                            ),
                                           );
                                         },
                                       ),
@@ -369,11 +416,13 @@ class _AddBookDialogResult {
     required this.title,
     required this.author,
     required this.status,
+    required this.rating,
   });
 
   final String title;
   final String author;
   final String status;
+  final double? rating;
 }
 
 class _AddBookDialog extends StatefulWidget {
@@ -391,6 +440,7 @@ class _AddBookDialogState extends State<_AddBookDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorController;
   late String _selectedStatus;
+  double? _selectedRating;
 
   @override
   void initState() {
@@ -398,6 +448,7 @@ class _AddBookDialogState extends State<_AddBookDialog> {
     _titleController = TextEditingController();
     _authorController = TextEditingController();
     _selectedStatus = widget.statuses.first;
+    _selectedRating = null;
   }
 
   @override
@@ -413,6 +464,7 @@ class _AddBookDialogState extends State<_AddBookDialog> {
         title: _titleController.text.trim(),
         author: _authorController.text.trim(),
         status: _selectedStatus,
+        rating: _selectedRating,
       ),
     );
   }
@@ -457,6 +509,29 @@ class _AddBookDialogState extends State<_AddBookDialog> {
               }
               setState(() {
                 _selectedStatus = value;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<double?>(
+            initialValue: _selectedRating,
+            decoration: const InputDecoration(
+              labelText: 'Rating',
+            ),
+            items: const [
+              DropdownMenuItem<double?>(
+                value: null,
+                child: Text('No rating'),
+              ),
+              DropdownMenuItem<double?>(value: 1, child: Text('1 star')),
+              DropdownMenuItem<double?>(value: 2, child: Text('2 stars')),
+              DropdownMenuItem<double?>(value: 3, child: Text('3 stars')),
+              DropdownMenuItem<double?>(value: 4, child: Text('4 stars')),
+              DropdownMenuItem<double?>(value: 5, child: Text('5 stars')),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedRating = value;
               });
             },
           ),

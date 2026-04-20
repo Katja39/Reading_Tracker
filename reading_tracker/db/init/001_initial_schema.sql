@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS books (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     author TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'unread'
+    status TEXT NOT NULL DEFAULT 'unread',
+    rating DOUBLE PRECISION
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);

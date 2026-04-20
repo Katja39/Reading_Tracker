@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Any, List
 
 import psycopg
 from fastapi import FastAPI, HTTPException
@@ -29,10 +29,14 @@ class CreateBookRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     author: str = Field(min_length=1, max_length=255)
     status: str = Field(min_length=1, max_length=50)
+    rating: float | None = Field(default=None, ge=0, le=5)
 
 
-class UpdateBookAuthorRequest(BaseModel):
+class UpdateBookRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
     author: str = Field(min_length=1, max_length=255)
+    status: str = Field(min_length=1, max_length=50)
+    rating: float | None = Field(default=None, ge=0, le=5)
 
 
 class BookResponse(BaseModel):
@@ -41,6 +45,7 @@ class BookResponse(BaseModel):
     title: str
     author: str
     status: str
+    rating: float | None
 
 
 app = FastAPI(title="Reading Tracker API")
@@ -91,7 +96,7 @@ def healthcheck() -> dict[str, str]:
 
 
 @app.get("/books", response_model=List[BookResponse])
-def list_books() -> list[dict[str, str]]:
+def list_books() -> list[dict[str, Any]]:
     with get_connection() as connection:
         ensure_default_user(connection)
 
@@ -103,7 +108,8 @@ def list_books() -> list[dict[str, str]]:
                     user_id::text AS user_id,
                     title,
                     author,
-                    status
+                    status,
+                    rating
                 FROM books
                 WHERE user_id = %s
                 ORDER BY title ASC
@@ -114,53 +120,62 @@ def list_books() -> list[dict[str, str]]:
 
 
 @app.post("/books", response_model=BookResponse, status_code=201)
-def create_book(payload: CreateBookRequest) -> dict[str, str]:
+def create_book(payload: CreateBookRequest) -> dict[str, Any]:
     with get_connection() as connection:
         ensure_default_user(connection)
 
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO books (user_id, title, author, status)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO books (user_id, title, author, status, rating)
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING
                     id::text AS id,
                     user_id::text AS user_id,
                     title,
                     author,
-                    status
+                    status,
+                    rating
                 """,
                 (
                     DEFAULT_USER_ID,
                     payload.title.strip(),
                     payload.author.strip(),
                     normalize_status(payload.status),
+                    payload.rating,
                 ),
             )
             return cursor.fetchone()
 
 
 @app.put("/books/{book_id}", response_model=BookResponse)
-def update_book_author(
+def update_book(
     book_id: str,
-    payload: UpdateBookAuthorRequest,
-) -> dict[str, str]:
+    payload: UpdateBookRequest,
+) -> dict[str, Any]:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
                 UPDATE books
-                SET author = %s
+                SET title = %s,
+                    author = %s,
+                    status = %s,
+                    rating = %s
                 WHERE id = %s AND user_id = %s
                 RETURNING
                     id::text AS id,
                     user_id::text AS user_id,
                     title,
                     author,
-                    status
+                    status,
+                    rating
                 """,
                 (
+                    payload.title.strip(),
                     payload.author.strip(),
+                    normalize_status(payload.status),
+                    payload.rating,
                     book_id,
                     DEFAULT_USER_ID,
                 ),
@@ -171,3 +186,21 @@ def update_book_author(
         raise HTTPException(status_code=404, detail="Book not found")
 
     return book
+
+
+@app.delete("/books/{book_id}", status_code=204)
+def delete_book(book_id: str) -> None:
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM books
+                WHERE id = %s AND user_id = %s
+                RETURNING id
+                """,
+                (book_id, DEFAULT_USER_ID),
+            )
+            deleted = cursor.fetchone()
+
+    if deleted is None:
+        raise HTTPException(status_code=404, detail="Book not found")

@@ -1,0 +1,634 @@
+import 'package:flutter/material.dart';
+
+import '../models/book.dart';
+import '../repositories/book_repository.dart';
+
+class BookDetailResult {
+  const BookDetailResult._({
+    this.updatedBook,
+    this.deletedBookId,
+  });
+
+  final Book? updatedBook;
+  final String? deletedBookId;
+
+  bool get isDeleted => deletedBookId != null;
+
+  factory BookDetailResult.updated(Book book) {
+    return BookDetailResult._(updatedBook: book);
+  }
+
+  factory BookDetailResult.deleted(String bookId) {
+    return BookDetailResult._(deletedBookId: bookId);
+  }
+}
+
+class BookDetailPage extends StatefulWidget {
+  const BookDetailPage({
+    super.key,
+    required this.book,
+    required this.repository,
+    required this.statuses,
+  });
+
+  final Book book;
+  final BookRepository repository;
+  final List<String> statuses;
+
+  @override
+  State<BookDetailPage> createState() => _BookDetailPageState();
+}
+
+class _BookDetailPageState extends State<BookDetailPage> {
+  late Book _book;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _book = widget.book;
+  }
+
+  Future<void> _showEditDialog() async {
+    final submitted = await showDialog<_EditBookDialogResult>(
+      context: context,
+      builder: (context) {
+        return _EditBookDialog(
+          book: _book,
+          statuses: widget.statuses,
+        );
+      },
+    );
+
+    if (submitted == null) {
+      return;
+    }
+
+    final title = submitted.title;
+    final author = submitted.author;
+    final status = submitted.status;
+
+    if (title.isEmpty) {
+      setState(() {
+        _errorMessage = 'Title must not be empty.';
+      });
+      return;
+    }
+
+    if (author.isEmpty) {
+      setState(() {
+        _errorMessage = 'Author must not be empty.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final localUpdatedBook = Book(
+      id: _book.id,
+      userId: _book.userId,
+      title: title,
+      author: author,
+      status: status,
+      rating: _book.rating,
+    );
+
+    try {
+      await widget.repository.updateBook(
+        id: _book.id,
+        userId: _book.userId,
+        title: title,
+        author: author,
+        status: status,
+        rating: _book.rating,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _book = localUpdatedBook;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showEditRatingDialog() async {
+    final submitted = await showDialog<_EditRatingDialogResult>(
+      context: context,
+      builder: (context) {
+        return _EditRatingDialog(initialRating: _book.rating);
+      },
+    );
+
+    if (submitted == null) {
+      return;
+    }
+
+    final rating = submitted.rating;
+
+    if (rating == _book.rating) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final localUpdatedBook = Book(
+      id: _book.id,
+      userId: _book.userId,
+      title: _book.title,
+      author: _book.author,
+      status: _book.status,
+      rating: rating,
+    );
+
+    try {
+      await widget.repository.updateBook(
+        id: _book.id,
+        userId: _book.userId,
+        title: _book.title,
+        author: _book.author,
+        status: _book.status,
+        rating: rating,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _book = localUpdatedBook;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Book'),
+          content: Text('Delete "${_book.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await widget.repository.deleteBook(id: _book.id);
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(BookDetailResult.deleted(_book.id));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _closePage() {
+    Navigator.of(context).pop(BookDetailResult.updated(_book));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return WillPopScope(
+      onWillPop: () async {
+        _closePage();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: _closePage,
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: Text(_book.title),
+          backgroundColor: theme.colorScheme.surface,
+          actions: [
+            IconButton(
+              onPressed: _isSaving ? null : _showEditDialog,
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit',
+            ),
+            IconButton(
+              onPressed: _isSaving ? null : _confirmDelete,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete',
+            ),
+          ],
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _book.title,
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 24),
+                      _BookDetailRow(label: 'Author', value: _book.author),
+                      const SizedBox(height: 12),
+                      _BookDetailRow(label: 'Status', value: _book.status),
+                      const SizedBox(height: 12),
+                      _BookRatingRow(
+                        rating: _book.rating,
+                        onTap: _isSaving ? null : _showEditRatingDialog,
+                      ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 20),
+                        Material(
+                          color: const Color(0xFFF8D7DA),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Color(0xFF7A1F28),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditBookDialogResult {
+  const _EditBookDialogResult({
+    required this.title,
+    required this.author,
+    required this.status,
+  });
+
+  final String title;
+  final String author;
+  final String status;
+}
+
+class _EditBookDialog extends StatefulWidget {
+  const _EditBookDialog({
+    required this.book,
+    required this.statuses,
+  });
+
+  final Book book;
+  final List<String> statuses;
+
+  @override
+  State<_EditBookDialog> createState() => _EditBookDialogState();
+}
+
+class _EditBookDialogState extends State<_EditBookDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _authorController;
+  late String _selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.book.title);
+    _authorController = TextEditingController(text: widget.book.author);
+    _selectedStatus = widget.statuses.contains(widget.book.status)
+        ? widget.book.status
+        : widget.statuses.first;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _authorController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(
+      _EditBookDialogResult(
+        title: _titleController.text.trim(),
+        author: _authorController.text.trim(),
+        status: _selectedStatus,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Book'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'Title',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _authorController,
+            decoration: const InputDecoration(
+              labelText: 'Author',
+            ),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedStatus,
+            decoration: const InputDecoration(
+              labelText: 'Status',
+            ),
+            items: widget.statuses
+                .map(
+                  (status) => DropdownMenuItem(
+                    value: status,
+                    child: Text(status),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _selectedStatus = value;
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditRatingDialogResult {
+  const _EditRatingDialogResult({
+    required this.rating,
+  });
+
+  final double? rating;
+}
+
+class _EditRatingDialog extends StatefulWidget {
+  const _EditRatingDialog({
+    required this.initialRating,
+  });
+
+  final double? initialRating;
+
+  @override
+  State<_EditRatingDialog> createState() => _EditRatingDialogState();
+}
+
+class _EditRatingDialogState extends State<_EditRatingDialog> {
+  late double? _selectedRating;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRating = widget.initialRating;
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(
+      _EditRatingDialogResult(rating: _selectedRating),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Rating'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rating',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              ...List.generate(5, (index) {
+                final starValue = index + 1;
+                final isSelected =
+                    _selectedRating != null && _selectedRating! >= starValue;
+                return IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedRating = starValue.toDouble();
+                    });
+                  },
+                  icon: Icon(
+                    isSelected ? Icons.star : Icons.star_border,
+                  ),
+                );
+              }),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedRating = null;
+                  });
+                },
+                child: const Text('Clear'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _BookDetailRow extends StatelessWidget {
+  const _BookDetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelLarge,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: theme.textTheme.bodyLarge,
+        ),
+      ],
+    );
+  }
+}
+
+class _BookRatingRow extends StatelessWidget {
+  const _BookRatingRow({
+    required this.rating,
+    required this.onTap,
+  });
+
+  final double? rating;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final effectiveRating = (rating ?? 0).clamp(0, 5);
+    final fullStars = effectiveRating.floor();
+    final hasHalfStar = effectiveRating - fullStars >= 0.5;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Rating',
+              style: theme.textTheme.labelLarge,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                ...List.generate(5, (index) {
+                  final icon = switch (index) {
+                    _ when index < fullStars => Icons.star,
+                    _ when index == fullStars && hasHalfStar =>
+                      Icons.star_half,
+                    _ => Icons.star_border,
+                  };
+
+                  return Icon(
+                    icon,
+                    color: theme.colorScheme.primary,
+                  );
+                }),
+                const SizedBox(width: 8),
+                Text(
+                  'Tap to edit',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
