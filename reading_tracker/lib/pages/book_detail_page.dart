@@ -68,6 +68,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final title = submitted.title;
     final author = submitted.author;
     final status = submitted.status;
+    final shouldPromptForRating =
+        _book.status != 'read' && status == 'read' && _book.rating == null;
 
     if (title.isEmpty) {
       setState(() {
@@ -96,6 +98,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       status: status,
       rating: _book.rating,
     );
+    var openRatingDialogAfterSave = false;
 
     try {
       await widget.repository.updateBook(
@@ -114,6 +117,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       setState(() {
         _book = localUpdatedBook;
       });
+      openRatingDialogAfterSave = shouldPromptForRating;
     } catch (error) {
       if (!mounted) {
         return;
@@ -128,6 +132,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
           _isSaving = false;
         });
       }
+    }
+
+    if (openRatingDialogAfterSave && mounted) {
+      await _showEditRatingDialog();
     }
   }
 

@@ -4,6 +4,12 @@ import '../models/book.dart';
 import 'book_detail_page.dart';
 import '../repositories/book_repository.dart';
 
+enum _BookSortField {
+  title,
+  author,
+  status,
+}
+
 class BookPage extends StatefulWidget {
   const BookPage({
     super.key,
@@ -30,6 +36,8 @@ class _BookPageState extends State<BookPage> {
   bool _isSaving = false;
   String? _errorMessage;
   int _selectedTabIndex = 1;
+  _BookSortField _sortField = _BookSortField.title;
+  bool _isSortAscending = true;
 
   @override
   void initState() {
@@ -140,11 +148,21 @@ class _BookPageState extends State<BookPage> {
 
   List<Book> _sortBooks(List<Book> books) {
     final sortedBooks = [...books];
-    sortedBooks.sort(
-      (left, right) => left.title.toLowerCase().compareTo(
-            right.title.toLowerCase(),
-          ),
-    );
+    String valueForSort(Book book) {
+      switch (_sortField) {
+        case _BookSortField.title:
+          return book.title.toLowerCase();
+        case _BookSortField.author:
+          return book.author.toLowerCase();
+        case _BookSortField.status:
+          return book.status.toLowerCase();
+      }
+    }
+
+    sortedBooks.sort((left, right) {
+      final compare = valueForSort(left).compareTo(valueForSort(right));
+      return _isSortAscending ? compare : -compare;
+    });
     return sortedBooks;
   }
 
@@ -215,22 +233,85 @@ class _BookPageState extends State<BookPage> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  FilledButton.icon(
-                    onPressed: _isSaving ? null : _showAddBookDialog,
-                    icon: const Icon(Icons.add),
-                    label: Text(
-                      _isSaving ? 'Saving...' : 'New Book',
+                  Expanded(
+                    child: Material(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Sort by:',
+                              style: theme.textTheme.labelMedium,
+                            ),
+                            const SizedBox(width: 8),
+                            DropdownButton<_BookSortField>(
+                              value: _sortField,
+                              isDense: true,
+                              underline: const SizedBox.shrink(),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: _BookSortField.title,
+                                  child: Text('Title'),
+                                ),
+                                DropdownMenuItem(
+                                  value: _BookSortField.author,
+                                  child: Text('Author'),
+                                ),
+                                DropdownMenuItem(
+                                  value: _BookSortField.status,
+                                  child: Text('Status'),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                if (value == null) {
+                                  return;
+                                }
+
+                                setState(() {
+                                  _sortField = value;
+                                  _books = _sortBooks(_books);
+                                });
+                              },
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isSortAscending = !_isSortAscending;
+                                  _books = _sortBooks(_books);
+                                });
+                              },
+                              tooltip: _isSortAscending
+                                  ? 'Ascending'
+                                  : 'Descending',
+                              visualDensity: VisualDensity.compact,
+                              iconSize: 18,
+                              padding: const EdgeInsets.all(8),
+                              icon: AnimatedRotation(
+                                duration: const Duration(milliseconds: 180),
+                                turns: _isSortAscending ? 0 : 0.5,
+                                child: const Icon(Icons.arrow_upward),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 16),
                 Material(
@@ -338,13 +419,22 @@ class _BookPageState extends State<BookPage> {
                       ),
               ),
               const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: _loadBooks,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reload'),
-                ),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _loadBooks,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reload'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: _isSaving ? null : _showAddBookDialog,
+                    icon: const Icon(Icons.add),
+                    label: Text(
+                      _isSaving ? 'Saving...' : 'New Book',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
