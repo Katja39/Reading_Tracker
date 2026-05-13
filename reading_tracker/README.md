@@ -1,10 +1,11 @@
 # reading_tracker
 
-Reading Tracker is a Flutter web application with a REST backend and PostgreSQL.
+Reading Tracker is a Flutter application with a REST backend and PostgreSQL.
 
 ## Local Setup
 
 1. Copy `.env.example` to `.env` and adjust values as required.
+2. Start the database and API:
 
 ```powershell
 docker compose up --build
@@ -23,7 +24,19 @@ docker compose up --build
 flutter pub get
 ```
 
-4. Run the web app against the local API:
+4. Optional health check for the API:
+
+```powershell
+curl http://localhost:8080/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+5. Run the Flutter app against the local API (Web):
 
 ```powershell
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
@@ -47,6 +60,28 @@ Build APK:
 
 ```powershell
 flutter build apk --dart-define=API_BASE_URL=https://your-api.example.com
+```
+
+## Tests
+
+Run Flutter widget/unit tests:
+
+```powershell
+flutter test
+```
+
+Run static analysis:
+
+```powershell
+flutter analyze
+```
+
+## Stop Services
+
+Stop API and database containers:
+
+```powershell
+docker compose down
 ```
 
 ## Services

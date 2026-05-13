@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'pages/book_page.dart';
 import 'repositories/book_repository.dart';
+import 'theme/app_theme.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
     required this.repository,
@@ -12,18 +13,32 @@ class MyApp extends StatelessWidget {
   final BookRepository repository;
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void _toggleThemeMode() {
+    setState(() {
+      _themeMode =
+          _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Reading Tracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2F6F4F),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF6F2EA),
-        useMaterial3: true,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: _themeMode,
+      home: BookPage(
+        repository: widget.repository,
+        themeMode: _themeMode,
+        onToggleThemeMode: _toggleThemeMode,
       ),
-      home: BookPage(repository: repository),
     );
   }
 }

@@ -161,6 +161,149 @@ void main() {
     expect(find.text('Alpha Book'), findsNothing);
     expect(find.text('Second Book'), findsOneWidget);
   });
+
+  testWidgets('sorts library entries ascending and descending', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sort/Filter'), findsOneWidget);
+
+    final alphaBefore = tester.getTopLeft(find.text('Alpha Book')).dy;
+    final secondBefore = tester.getTopLeft(find.text('Second Book')).dy;
+    expect(alphaBefore < secondBefore, isTrue);
+
+    await tester.tap(find.text('Sort/Filter'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sort & filter'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    final alphaAfter = tester.getTopLeft(find.text('Alpha Book')).dy;
+    final secondAfter = tester.getTopLeft(find.text('Second Book')).dy;
+    expect(alphaAfter > secondAfter, isTrue);
+  });
+
+  testWidgets('filters library entries by multiple categories', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sort/Filter'), findsOneWidget);
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Second Book'), findsOneWidget);
+    expect(find.text('Read Book'), findsOneWidget);
+
+    await tester.tap(find.text('Sort/Filter'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sort & filter'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField).at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Author').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField).at(2));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Author A').last);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Second Book'), findsNothing);
+    expect(find.text('Read Book'), findsNothing);
+  });
+
+  testWidgets('searches library entries via text field', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Second Book'), findsOneWidget);
+    expect(find.text('Read Book'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'second');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Book'), findsNothing);
+    expect(find.text('Second Book'), findsOneWidget);
+    expect(find.text('Read Book'), findsNothing);
+  });
+
+  testWidgets('changes configurable library columns from status to rating', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Title'), findsOneWidget);
+    expect(find.text('Author'), findsOneWidget);
+    expect(find.text('Status'), findsOneWidget);
+    expect(find.text('reading'), findsOneWidget);
+    expect(find.text('4/5'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.arrow_drop_down).at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rating').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rating'), findsOneWidget);
+    expect(find.text('4/5'), findsOneWidget);
+    expect(find.text('No rating'), findsOneWidget);
+    expect(find.text('5/5'), findsOneWidget);
+  });
+
+  testWidgets(
+    'opens rating dialog automatically when status changes to read and rating is missing',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MyApp(
+          repository: FakeBookRepository(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Second Book'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('unread'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('read').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Rating'), findsOneWidget);
+    },
+  );
 }
 
 class FakeBookRepository implements BookRepository {
@@ -199,6 +342,14 @@ class FakeBookRepository implements BookRepository {
         author: 'Second Author',
         status: 'unread',
         rating: null,
+      ),
+      Book(
+        id: 'book-3',
+        userId: 'user-1',
+        title: 'Read Book',
+        author: 'Reader Author',
+        status: 'read',
+        rating: 5,
       ),
     ];
   }

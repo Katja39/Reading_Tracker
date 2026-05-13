@@ -1,28 +1,53 @@
 import 'package:flutter/material.dart';
 
 import '../models/book.dart';
-import 'book_detail_page.dart';
 import '../repositories/book_repository.dart';
+import '../widgets/error_banner.dart';
+import 'book_detail_page.dart';
+
+part 'book_page_dialogs.dart';
+part 'book_page_sections.dart';
 
 enum _BookSortField {
   title,
   author,
   status,
+  rating,
+}
+
+enum _BookFilterField {
+  title,
+  author,
+  status,
+  rating,
+}
+
+enum _LibraryColumn {
+  author,
+  status,
+  rating,
 }
 
 class BookPage extends StatefulWidget {
   const BookPage({
     super.key,
     required this.repository,
+    required this.themeMode,
+    required this.onToggleThemeMode,
   });
 
   final BookRepository repository;
+  final ThemeMode themeMode;
+  final VoidCallback onToggleThemeMode;
 
   @override
   State<BookPage> createState() => _BookPageState();
 }
 
 class _BookPageState extends State<BookPage> {
+  static const _menuActionSortFilter = 'sort_filter';
+  static const _menuActionResetFilter = 'reset_filter';
+  static const _libraryTextPreviewLength = 10;
   static const _bookStatuses = [
     'unread',
     'reading',
@@ -38,11 +63,24 @@ class _BookPageState extends State<BookPage> {
   int _selectedTabIndex = 1;
   _BookSortField _sortField = _BookSortField.title;
   bool _isSortAscending = true;
+  _BookFilterField _filterField = _BookFilterField.status;
+  String _filterValue = 'all';
+  _LibraryColumn _secondaryColumn = _LibraryColumn.author;
+  _LibraryColumn _tertiaryColumn = _LibraryColumn.status;
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     _loadBooks();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadBooks() async {
@@ -59,7 +97,7 @@ class _BookPageState extends State<BookPage> {
       }
 
       setState(() {
-        _books = _sortBooks(books);
+        _books = books;
       });
     } catch (error) {
       if (!mounted) {
@@ -127,7 +165,7 @@ class _BookPageState extends State<BookPage> {
       }
 
       setState(() {
-        _books = _sortBooks([..._books, savedBook]);
+        _books = [..._books, savedBook];
       });
     } catch (error) {
       if (!mounted) {
@@ -148,22 +186,394 @@ class _BookPageState extends State<BookPage> {
 
   List<Book> _sortBooks(List<Book> books) {
     final sortedBooks = [...books];
-    String valueForSort(Book book) {
-      switch (_sortField) {
-        case _BookSortField.title:
-          return book.title.toLowerCase();
-        case _BookSortField.author:
-          return book.author.toLowerCase();
-        case _BookSortField.status:
-          return book.status.toLowerCase();
-      }
-    }
-
     sortedBooks.sort((left, right) {
-      final compare = valueForSort(left).compareTo(valueForSort(right));
+      final compare = switch (_sortField) {
+        _BookSortField.title =>
+          left.title.toLowerCase().compareTo(right.title.toLowerCase()),
+        _BookSortField.author =>
+          left.author.toLowerCase().compareTo(right.author.toLowerCase()),
+        _BookSortField.status =>
+          left.status.toLowerCase().compareTo(right.status.toLowerCase()),
+        _BookSortField.rating => (left.rating ?? -1).compareTo(right.rating ?? -1),
+      };
       return _isSortAscending ? compare : -compare;
     });
     return sortedBooks;
+  }
+
+  List<Book> _filterBooks(List<Book> books) {
+    if (_filterValue == 'all') {
+      return books;
+    }
+
+    return books
+        .where((book) => _valueForFilterField(book, _filterField) == _filterValue)
+        .toList();
+  }
+
+  List<Book> _searchBooks(List<Book> books) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return books;
+    }
+
+    return books.where((book) {
+      return book.title.toLowerCase().contains(query) ||
+          book.author.toLowerCase().contains(query) ||
+          book.status.toLowerCase().contains(query) ||
+          _formatRating(book.rating).toLowerCase().contains(query);
+    }).toList();
+  }
+
+  String _valueForFilterField(Book book, _BookFilterField field) {
+    switch (field) {
+      case _BookFilterField.title:
+        return book.title;
+      case _BookFilterField.author:
+        return book.author;
+      case _BookFilterField.status:
+        return book.status;
+      case _BookFilterField.rating:
+        return _formatRating(book.rating);
+    }
+  }
+
+  List<String> _filterOptions() {
+    if (_filterField == _BookFilterField.status) {
+      return _bookStatuses;
+    }
+
+    final values = _books
+        .map((book) => _valueForFilterField(book, _filterField))
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    return values;
+  }
+
+  List<DropdownMenuItem<_BookSortField>> _sortFieldItems() {
+    return const [
+      DropdownMenuItem(
+        value: _BookSortField.title,
+        child: Text('Title'),
+      ),
+      DropdownMenuItem(
+        value: _BookSortField.author,
+        child: Text('Author'),
+      ),
+      DropdownMenuItem(
+        value: _BookSortField.status,
+        child: Text('Status'),
+      ),
+      DropdownMenuItem(
+        value: _BookSortField.rating,
+        child: Text('Rating'),
+      ),
+    ];
+  }
+
+  List<DropdownMenuItem<_BookFilterField>> _filterFieldItems() {
+    return const [
+      DropdownMenuItem(
+        value: _BookFilterField.title,
+        child: Text('Title'),
+      ),
+      DropdownMenuItem(
+        value: _BookFilterField.author,
+        child: Text('Author'),
+      ),
+      DropdownMenuItem(
+        value: _BookFilterField.status,
+        child: Text('Status'),
+      ),
+      DropdownMenuItem(
+        value: _BookFilterField.rating,
+        child: Text('Rating'),
+      ),
+    ];
+  }
+
+  String _formatRating(double? rating) {
+    if (rating == null) {
+      return 'No rating';
+    }
+
+    final normalizedRating = rating % 1 == 0 ? rating.toInt().toString() : rating.toString();
+    return '$normalizedRating/5';
+  }
+
+  String _libraryColumnLabel(_LibraryColumn column) {
+    switch (column) {
+      case _LibraryColumn.author:
+        return 'Author';
+      case _LibraryColumn.status:
+        return 'Status';
+      case _LibraryColumn.rating:
+        return 'Rating';
+    }
+  }
+
+  String _libraryColumnValue(Book book, _LibraryColumn column) {
+    switch (column) {
+      case _LibraryColumn.author:
+        return _truncateLibraryText(book.author);
+      case _LibraryColumn.status:
+        return book.status;
+      case _LibraryColumn.rating:
+        return _formatRating(book.rating);
+    }
+  }
+
+  String _truncateLibraryText(String value) {
+    if (value.length <= _libraryTextPreviewLength) {
+      return value;
+    }
+    return '${value.substring(0, _libraryTextPreviewLength)}...';
+  }
+
+  int _columnFlexForValues(Iterable<String> values) {
+    final maxLength = values.fold<int>(
+      0,
+      (currentMax, value) => value.length > currentMax ? value.length : currentMax,
+    );
+
+    if (maxLength <= 8) {
+      return 1;
+    }
+    if (maxLength <= 16) {
+      return 2;
+    }
+    if (maxLength <= 24) {
+      return 3;
+    }
+    return 4;
+  }
+
+  int _titleColumnFlex(List<Book> books) {
+    final baseFlex = _columnFlexForValues([
+      'Title',
+      ...books.map((book) => book.title),
+    ]);
+
+    // Keep title readable, but cap it so the trailing columns stay visible.
+    final reducedFlex = baseFlex > 1 ? baseFlex - 1 : 1;
+    return reducedFlex > 2 ? 2 : reducedFlex;
+  }
+
+  int _libraryColumnFlex(List<Book> books, _LibraryColumn column) {
+    final baseFlex = _columnFlexForValues([
+      _libraryColumnLabel(column),
+      ...books.map((book) => _libraryColumnValue(book, column)),
+    ]);
+
+    // Ensure configurable columns do not collapse too far.
+    return baseFlex < 2 ? 2 : baseFlex;
+  }
+
+  void _updateLibraryColumn({
+    required bool isSecondaryColumn,
+    required _LibraryColumn column,
+  }) {
+    setState(() {
+      if (isSecondaryColumn) {
+        _secondaryColumn = column;
+        if (_tertiaryColumn == column) {
+          _tertiaryColumn = _secondaryColumn == _LibraryColumn.author
+              ? _LibraryColumn.status
+              : _LibraryColumn.author;
+        }
+      } else {
+        _tertiaryColumn = column;
+        if (_secondaryColumn == column) {
+          _secondaryColumn = _tertiaryColumn == _LibraryColumn.author
+              ? _LibraryColumn.status
+              : _LibraryColumn.author;
+        }
+      }
+    });
+  }
+
+  List<PopupMenuEntry<_LibraryColumn>> _libraryColumnMenuItems(
+    _LibraryColumn selectedColumn,
+  ) {
+    return _LibraryColumn.values
+        .map(
+          (column) => CheckedPopupMenuItem<_LibraryColumn>(
+            value: column,
+            checked: column == selectedColumn,
+            child: Text(_libraryColumnLabel(column)),
+          ),
+        )
+        .toList();
+  }
+
+  Widget _buildColumnHeader(
+    ThemeData theme, {
+    required String label,
+    required bool canChange,
+    _LibraryColumn? selectedColumn,
+    bool isSecondaryColumn = false,
+  }) {
+    if (!canChange || selectedColumn == null) {
+      return Text(
+        label,
+        style: theme.textTheme.labelLarge,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+      );
+    }
+
+    return PopupMenuButton<_LibraryColumn>(
+      tooltip: 'Change column',
+      onSelected: (value) {
+        _updateLibraryColumn(
+          isSecondaryColumn: isSecondaryColumn,
+          column: value,
+        );
+      },
+      itemBuilder: (_) => _libraryColumnMenuItems(selectedColumn),
+      padding: EdgeInsets.zero,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.55,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: theme.textTheme.labelLarge,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
+            ),
+            const SizedBox(width: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFilterOptionLabel(String value) {
+    if (_filterField != _BookFilterField.status) {
+      return value;
+    }
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  void _resetSortAndFilter() {
+    setState(() {
+      _filterField = _BookFilterField.status;
+      _filterValue = 'all';
+      _sortField = _BookSortField.title;
+      _isSortAscending = true;
+      _secondaryColumn = _LibraryColumn.author;
+      _tertiaryColumn = _LibraryColumn.status;
+    });
+  }
+
+  Future<void> _openSortFilterSheet(ThemeData theme) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Sort by:', style: theme.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<_BookSortField>(
+                        initialValue: _sortField,
+                        items: _sortFieldItems(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _sortField = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _isSortAscending = !_isSortAscending;
+                        });
+                      },
+                      tooltip: _isSortAscending ? 'Ascending' : 'Descending',
+                      icon: AnimatedRotation(
+                        duration: const Duration(milliseconds: 180),
+                        turns: _isSortAscending ? 0 : 0.5,
+                        child: const Icon(Icons.arrow_upward),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text('Filter by:', style: theme.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<_BookFilterField>(
+                  initialValue: _filterField,
+                  items: _filterFieldItems(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _filterField = value;
+                      _filterValue = 'all';
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text('Value:', style: theme.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: _filterValue,
+                  items: [
+                    const DropdownMenuItem(
+                      value: 'all',
+                      child: Text('All'),
+                    ),
+                    ..._filterOptions().map(
+                      (value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(
+                          _formatFilterOptionLabel(value),
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _filterValue = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openBookDetails(Book book) async {
@@ -190,284 +600,54 @@ class _BookPageState extends State<BookPage> {
       }
 
       final updatedBook = result.updatedBook!;
-      final updatedBooks = _books
+      _books = _books
           .map((entry) => entry.id == updatedBook.id ? updatedBook : entry)
           .toList();
-      _books = _sortBooks(updatedBooks);
     });
-  }
-
-  Widget _buildStartTab(ThemeData theme) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.menu_book_rounded,
-                    size: 48,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Home',
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Material(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 2,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Sort by:',
-                              style: theme.textTheme.labelMedium,
-                            ),
-                            const SizedBox(width: 8),
-                            DropdownButton<_BookSortField>(
-                              value: _sortField,
-                              isDense: true,
-                              underline: const SizedBox.shrink(),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: _BookSortField.title,
-                                  child: Text('Title'),
-                                ),
-                                DropdownMenuItem(
-                                  value: _BookSortField.author,
-                                  child: Text('Author'),
-                                ),
-                                DropdownMenuItem(
-                                  value: _BookSortField.status,
-                                  child: Text('Status'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value == null) {
-                                  return;
-                                }
-
-                                setState(() {
-                                  _sortField = value;
-                                  _books = _sortBooks(_books);
-                                });
-                              },
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _isSortAscending = !_isSortAscending;
-                                  _books = _sortBooks(_books);
-                                });
-                              },
-                              tooltip: _isSortAscending
-                                  ? 'Ascending'
-                                  : 'Descending',
-                              visualDensity: VisualDensity.compact,
-                              iconSize: 18,
-                              padding: const EdgeInsets.all(8),
-                              icon: AnimatedRotation(
-                                duration: const Duration(milliseconds: 180),
-                                turns: _isSortAscending ? 0 : 0.5,
-                                child: const Icon(Icons.arrow_upward),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Material(
-                  color: const Color(0xFFF8D7DA),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(
-                        color: Color(0xFF7A1F28),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: books.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No books available yet.',
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                )
-                              : Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Title',
-                                            style: theme.textTheme.labelLarge,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'Author',
-                                            style: theme.textTheme.labelLarge,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Text(
-                                            'Status',
-                                            style: theme.textTheme.labelLarge,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const Divider(height: 24),
-                                    Expanded(
-                                      child: ListView.separated(
-                                        itemCount: books.length,
-                                        separatorBuilder: (_, _) =>
-                                            const Divider(height: 24),
-                                        itemBuilder: (context, index) {
-                                          final entry = books[index];
-                                          return InkWell(
-                                            onTap: () =>
-                                                _openBookDetails(entry),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 10,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Text(entry.title),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Text(entry.author),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Text(entry.status),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _loadBooks,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reload'),
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: _isSaving ? null : _showAddBookDialog,
-                    icon: const Icon(Icons.add),
-                    label: Text(
-                      _isSaving ? 'Saving...' : 'New Book',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyTab(ThemeData theme) {
-    return Center(
-      child: Text(
-        'This page is empty.',
-        style: theme.textTheme.bodyLarge,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final books = _books;
+    final books = _sortBooks(_searchBooks(_filterBooks(_books)));
+    final isDarkMode = widget.themeMode == ThemeMode.dark;
     final isMobile = MediaQuery.sizeOf(context).width < 700;
     final tabIndex = isMobile ? _selectedTabIndex : 1;
     final (title, content) = switch (tabIndex) {
-      0 => ('Home', _buildStartTab(theme)),
-      1 => ('Library', _buildLibraryTab(theme, books)),
-      _ => ('Empty', _buildEmptyTab(theme)),
+      0 => ('Home', this._buildStartTab(theme)),
+      1 => ('Library', this._buildLibraryTab(theme, books)),
+      _ => ('Empty', this._buildEmptyTab(theme)),
     };
 
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         backgroundColor: theme.colorScheme.surface,
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onSelected: (value) {
+              if (value == 'toggle_theme') {
+                widget.onToggleThemeMode();
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem<String>(
+                value: 'toggle_theme',
+                child: Row(
+                  children: [
+                    const Icon(Icons.palette_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Schema: ${isDarkMode ? 'Dark' : 'Light'}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: content,
       bottomNavigationBar: isMobile
@@ -482,7 +662,7 @@ class _BookPageState extends State<BookPage> {
                 NavigationDestination(
                   icon: Icon(Icons.home_outlined),
                   selectedIcon: Icon(Icons.home),
-                  label: 'Start',
+                  label: 'Home',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.library_books_outlined),
@@ -497,146 +677,6 @@ class _BookPageState extends State<BookPage> {
               ],
             )
           : null,
-    );
-  }
-}
-
-class _AddBookDialogResult {
-  const _AddBookDialogResult({
-    required this.title,
-    required this.author,
-    required this.status,
-    required this.rating,
-  });
-
-  final String title;
-  final String author;
-  final String status;
-  final double? rating;
-}
-
-class _AddBookDialog extends StatefulWidget {
-  const _AddBookDialog({
-    required this.statuses,
-  });
-
-  final List<String> statuses;
-
-  @override
-  State<_AddBookDialog> createState() => _AddBookDialogState();
-}
-
-class _AddBookDialogState extends State<_AddBookDialog> {
-  late final TextEditingController _titleController;
-  late final TextEditingController _authorController;
-  late String _selectedStatus;
-  double? _selectedRating;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController();
-    _authorController = TextEditingController();
-    _selectedStatus = widget.statuses.first;
-    _selectedRating = null;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _authorController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    Navigator.of(context).pop(
-      _AddBookDialogResult(
-        title: _titleController.text.trim(),
-        author: _authorController.text.trim(),
-        status: _selectedStatus,
-        rating: _selectedRating,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('New Book'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Title',
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _authorController,
-            decoration: const InputDecoration(
-              labelText: 'Author',
-            ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedStatus,
-            decoration: const InputDecoration(
-              labelText: 'Status',
-            ),
-            items: widget.statuses
-                .map(
-                  (status) => DropdownMenuItem(
-                    value: status,
-                    child: Text(status),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _selectedStatus = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<double?>(
-            initialValue: _selectedRating,
-            decoration: const InputDecoration(
-              labelText: 'Rating',
-            ),
-            items: const [
-              DropdownMenuItem<double?>(
-                value: null,
-                child: Text('No rating'),
-              ),
-              DropdownMenuItem<double?>(value: 1, child: Text('1 star')),
-              DropdownMenuItem<double?>(value: 2, child: Text('2 stars')),
-              DropdownMenuItem<double?>(value: 3, child: Text('3 stars')),
-              DropdownMenuItem<double?>(value: 4, child: Text('4 stars')),
-              DropdownMenuItem<double?>(value: 5, child: Text('5 stars')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _selectedRating = value;
-              });
-            },
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Create'),
-        ),
-      ],
     );
   }
 }

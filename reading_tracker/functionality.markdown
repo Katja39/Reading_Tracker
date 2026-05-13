@@ -1,7 +1,11 @@
 
-- Hauptfunktion: Bücher verwalten -> Informationen, Status der Bücher, Bewertung
-		- Filterfunktion (nach Autor z.B.)
-		- Möglichkeit angezeigte Informationen zu ändern
+- Hauptfunktion: 
+		X Bücher verwalten -> Informationen, Status der Bücher, Bewertung
+		X Bearbeiten der Informationen
+		X Filterfunktion (nach Autor z.B.)
+		X Möglichkeit angezeigte Informationen zu ändern
+		X Filter, Search, Sort
+		- Autofill aus API mit ISBN
 
 - Nebenfunktion:
 Main page:
@@ -9,7 +13,7 @@ Main page:
 	- Status der aktuellen "reading" bücher - prozent
 statistics page:
 	- wie viel dieses Jahr gelesen? -> mit Ziel
-	- Neuzugänge,
+	- Neuzugänge
 	- prices/budget
 	- ... graphs
 timer:
@@ -17,5 +21,5 @@ timer:
 detailpage:
 	- Möglichkeit Notizen zu einem Buch zu hinterlegen -> mit einem Graph
 settings:
-	- import von goodreads/.xsl
+	- import von goodreads - .csv
 	

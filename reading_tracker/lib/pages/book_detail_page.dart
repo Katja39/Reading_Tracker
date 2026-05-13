@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/book.dart';
 import '../repositories/book_repository.dart';
+import '../widgets/error_banner.dart';
 
 class BookDetailResult {
   const BookDetailResult._({
@@ -298,10 +299,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -320,19 +321,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       ),
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 20),
-                        Material(
-                          color: const Color(0xFFF8D7DA),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: Color(0xFF7A1F28),
-                              ),
-                            ),
-                          ),
-                        ),
+                        ErrorBanner(message: _errorMessage!),
                       ],
                     ],
                   ),
