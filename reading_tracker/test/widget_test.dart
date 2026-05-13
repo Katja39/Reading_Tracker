@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reading_tracker/app.dart';
 import 'package:reading_tracker/models/book.dart';
+import 'package:reading_tracker/models/book_enrichment.dart';
 import 'package:reading_tracker/repositories/book_repository.dart';
 
 void main() {
@@ -317,6 +318,7 @@ class FakeBookRepository implements BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   }) async {
     return Book(
       id: 'book-1',
@@ -329,6 +331,7 @@ class FakeBookRepository implements BookRepository {
       pages: pages,
       publisher: publisher,
       languageCode: languageCode,
+      coverUrl: coverUrl,
     );
   }
 
@@ -374,6 +377,7 @@ class FakeBookRepository implements BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   }) async {
     return Book(
       id: id,
@@ -386,9 +390,29 @@ class FakeBookRepository implements BookRepository {
       pages: pages,
       publisher: publisher,
       languageCode: languageCode,
+      coverUrl: coverUrl,
     );
   }
 
   @override
   Future<void> deleteBook({required String id}) async {}
+
+  @override
+  Future<BookEnrichment?> fetchBookEnrichmentByIsbn({
+    required String isbn,
+  }) async {
+    if (isbn.trim() == '9780140328721') {
+      return const BookEnrichment(
+        isbn: '9780140328721',
+        title: 'Fantastic Mr. Fox',
+        author: 'Roald Dahl',
+        pages: 96,
+        publisher: 'Puffin',
+        languageCode: 'eng',
+        coverUrl:
+            'https://covers.openlibrary.org/b/isbn/9780140328721-L.jpg?default=false',
+      );
+    }
+    return null;
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/book.dart';
+import '../models/book_enrichment.dart';
 import 'book_repository.dart';
 
 class ApiBookRepository implements BookRepository {
@@ -35,6 +36,7 @@ class ApiBookRepository implements BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -55,6 +57,9 @@ class ApiBookRepository implements BookRepository {
     }
     if (languageCode != null) {
       payload['language_code'] = languageCode;
+    }
+    if (coverUrl != null) {
+      payload['cover_url'] = coverUrl;
     }
 
     final response = await _client.post(
@@ -79,6 +84,7 @@ class ApiBookRepository implements BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -99,6 +105,9 @@ class ApiBookRepository implements BookRepository {
     }
     if (languageCode != null) {
       payload['language_code'] = languageCode;
+    }
+    if (coverUrl != null) {
+      payload['cover_url'] = coverUrl;
     }
 
     final response = await _client.put(
@@ -121,6 +130,7 @@ class ApiBookRepository implements BookRepository {
         pages: pages,
         publisher: publisher,
         languageCode: languageCode,
+        coverUrl: coverUrl,
       );
     }
 
@@ -138,6 +148,7 @@ class ApiBookRepository implements BookRepository {
         pages: pages,
         publisher: publisher,
         languageCode: languageCode,
+        coverUrl: coverUrl,
       );
     }
   }
@@ -177,6 +188,31 @@ class ApiBookRepository implements BookRepository {
     throw Exception(
       'Delete request failed after fallback attempts '
       '(${latestResponse.statusCode}): ${latestResponse.body}',
+    );
+  }
+
+  @override
+  Future<BookEnrichment?> fetchBookEnrichmentByIsbn({
+    required String isbn,
+  }) async {
+    final trimmedIsbn = isbn.trim();
+    if (trimmedIsbn.isEmpty) {
+      return null;
+    }
+
+    final response = await _client.get(
+      Uri.parse(
+        '$baseUrl/isbn/enrich?isbn=${Uri.encodeQueryComponent(trimmedIsbn)}',
+      ),
+    );
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    _throwIfError(response);
+    return BookEnrichment.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
 

@@ -51,7 +51,6 @@ class BookPage extends StatefulWidget {
 class _BookPageState extends State<BookPage> {
   static const _menuActionSortFilter = 'sort_filter';
   static const _menuActionResetFilter = 'reset_filter';
-  static const _libraryTextPreviewLength = 10;
   static const _bookStatuses = [
     'unread',
     'reading',
@@ -69,8 +68,15 @@ class _BookPageState extends State<BookPage> {
   bool _isSortAscending = true;
   _BookFilterField _filterField = _BookFilterField.status;
   String _filterValue = 'all';
-  _LibraryColumn _secondaryColumn = _LibraryColumn.author;
-  _LibraryColumn _tertiaryColumn = _LibraryColumn.status;
+  List<_LibraryColumn> _columnOrder = const [
+    _LibraryColumn.author,
+    _LibraryColumn.status,
+    _LibraryColumn.rating,
+    _LibraryColumn.isbn,
+    _LibraryColumn.pages,
+    _LibraryColumn.publisher,
+    _LibraryColumn.languageCode,
+  ];
   late final TextEditingController _searchController;
   String _searchQuery = '';
 
@@ -124,7 +130,10 @@ class _BookPageState extends State<BookPage> {
     final submitted = await showDialog<_AddBookDialogResult>(
       context: context,
       builder: (context) {
-        return _AddBookDialog(statuses: _bookStatuses);
+        return _AddBookDialog(
+          statuses: _bookStatuses,
+          repository: widget.repository,
+        );
       },
     );
 
@@ -140,6 +149,7 @@ class _BookPageState extends State<BookPage> {
     final pages = submitted.pages;
     final publisher = submitted.publisher;
     final languageCode = submitted.languageCode;
+    final coverUrl = submitted.coverUrl;
 
     if (title.isEmpty) {
       setState(() {
@@ -170,6 +180,7 @@ class _BookPageState extends State<BookPage> {
         pages: pages,
         publisher: publisher,
         languageCode: languageCode,
+        coverUrl: coverUrl,
       );
 
       if (!mounted) {
@@ -337,7 +348,7 @@ class _BookPageState extends State<BookPage> {
   String _libraryColumnValue(Book book, _LibraryColumn column) {
     switch (column) {
       case _LibraryColumn.author:
-        return _truncateLibraryText(book.author);
+        return book.author;
       case _LibraryColumn.status:
         return book.status;
       case _LibraryColumn.rating:
@@ -347,21 +358,10 @@ class _BookPageState extends State<BookPage> {
       case _LibraryColumn.pages:
         return book.pages?.toString() ?? '-';
       case _LibraryColumn.publisher:
-        return _truncateLibraryText(book.publisher ?? '-');
+        return book.publisher ?? '-';
       case _LibraryColumn.languageCode:
         return book.languageCode ?? '-';
     }
-  }
-
-  _LibraryColumn _firstAvailableColumn(_LibraryColumn disallowed) {
-    return _LibraryColumn.values.firstWhere((column) => column != disallowed);
-  }
-
-  String _truncateLibraryText(String value) {
-    if (value.length <= _libraryTextPreviewLength) {
-      return value;
-    }
-    return '${value.substring(0, _libraryTextPreviewLength)}...';
   }
 
   int _columnFlexForValues(Iterable<String> values) {
@@ -403,22 +403,25 @@ class _BookPageState extends State<BookPage> {
     return baseFlex < 2 ? 2 : baseFlex;
   }
 
-  void _updateLibraryColumn({
-    required bool isSecondaryColumn,
+  void _updateLibraryColumnAtIndex({
+    required int index,
     required _LibraryColumn column,
   }) {
+    if (index < 0 || index >= _columnOrder.length) {
+      return;
+    }
+
+    final currentIndex = _columnOrder.indexOf(column);
+    if (currentIndex == -1 || currentIndex == index) {
+      return;
+    }
+
     setState(() {
-      if (isSecondaryColumn) {
-        _secondaryColumn = column;
-        if (_tertiaryColumn == column) {
-          _tertiaryColumn = _firstAvailableColumn(_secondaryColumn);
-        }
-      } else {
-        _tertiaryColumn = column;
-        if (_secondaryColumn == column) {
-          _secondaryColumn = _firstAvailableColumn(_tertiaryColumn);
-        }
-      }
+      final reordered = [..._columnOrder];
+      final currentAtTarget = reordered[index];
+      reordered[index] = column;
+      reordered[currentIndex] = currentAtTarget;
+      _columnOrder = reordered;
     });
   }
 
@@ -441,7 +444,7 @@ class _BookPageState extends State<BookPage> {
     required String label,
     required bool canChange,
     _LibraryColumn? selectedColumn,
-    bool isSecondaryColumn = false,
+    int? columnOrderIndex,
   }) {
     if (!canChange || selectedColumn == null) {
       return Text(
@@ -455,8 +458,8 @@ class _BookPageState extends State<BookPage> {
     return PopupMenuButton<_LibraryColumn>(
       tooltip: 'Change column',
       onSelected: (value) {
-        _updateLibraryColumn(
-          isSecondaryColumn: isSecondaryColumn,
+        _updateLibraryColumnAtIndex(
+          index: columnOrderIndex ?? 0,
           column: value,
         );
       },
@@ -501,8 +504,15 @@ class _BookPageState extends State<BookPage> {
       _filterValue = 'all';
       _sortField = _BookSortField.title;
       _isSortAscending = true;
-      _secondaryColumn = _LibraryColumn.author;
-      _tertiaryColumn = _LibraryColumn.status;
+      _columnOrder = const [
+        _LibraryColumn.author,
+        _LibraryColumn.status,
+        _LibraryColumn.rating,
+        _LibraryColumn.isbn,
+        _LibraryColumn.pages,
+        _LibraryColumn.publisher,
+        _LibraryColumn.languageCode,
+      ];
     });
   }
 

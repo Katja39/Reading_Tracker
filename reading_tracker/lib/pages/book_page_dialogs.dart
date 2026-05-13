@@ -10,6 +10,7 @@ class _AddBookDialogResult {
     required this.pages,
     required this.publisher,
     required this.languageCode,
+    required this.coverUrl,
   });
 
   final String title;
@@ -20,14 +21,17 @@ class _AddBookDialogResult {
   final int? pages;
   final String? publisher;
   final String? languageCode;
+  final String? coverUrl;
 }
 
 class _AddBookDialog extends StatefulWidget {
   const _AddBookDialog({
     required this.statuses,
+    required this.repository,
   });
 
   final List<String> statuses;
+  final BookRepository repository;
 
   @override
   State<_AddBookDialog> createState() => _AddBookDialogState();
@@ -40,8 +44,11 @@ class _AddBookDialogState extends State<_AddBookDialog> {
   late final TextEditingController _pagesController;
   late final TextEditingController _publisherController;
   late final TextEditingController _languageCodeController;
+  String? _coverUrl;
   late String _selectedStatus;
   double? _selectedRating;
+  bool _isAutoFilling = false;
+  String? _autoFillMessage;
 
   @override
   void initState() {
@@ -54,6 +61,7 @@ class _AddBookDialogState extends State<_AddBookDialog> {
     _languageCodeController = TextEditingController();
     _selectedStatus = widget.statuses.first;
     _selectedRating = null;
+    _coverUrl = null;
   }
 
   @override
@@ -87,8 +95,74 @@ class _AddBookDialogState extends State<_AddBookDialog> {
         languageCode: _languageCodeController.text.trim().isEmpty
             ? null
             : _languageCodeController.text.trim().toLowerCase(),
+        coverUrl: _coverUrl,
       ),
     );
+  }
+
+  Future<void> _autoFillFromIsbn() async {
+    final isbn = _isbnController.text.trim();
+    if (isbn.isEmpty) {
+      setState(() {
+        _autoFillMessage = 'Please enter an ISBN first.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isAutoFilling = true;
+      _autoFillMessage = null;
+    });
+
+    try {
+      final enrichment = await widget.repository.fetchBookEnrichmentByIsbn(
+        isbn: isbn,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      if (enrichment == null) {
+        setState(() {
+          _autoFillMessage = 'No metadata found for this ISBN.';
+        });
+        return;
+      }
+
+      setState(() {
+        if (enrichment.title != null && enrichment.title!.isNotEmpty) {
+          _titleController.text = enrichment.title!;
+        }
+        if (enrichment.author != null && enrichment.author!.isNotEmpty) {
+          _authorController.text = enrichment.author!;
+        }
+        if (enrichment.pages != null) {
+          _pagesController.text = enrichment.pages!.toString();
+        }
+        if (enrichment.publisher != null && enrichment.publisher!.isNotEmpty) {
+          _publisherController.text = enrichment.publisher!;
+        }
+        if (enrichment.languageCode != null &&
+            enrichment.languageCode!.isNotEmpty) {
+          _languageCodeController.text = enrichment.languageCode!;
+        }
+        _coverUrl = enrichment.coverUrl;
+        _autoFillMessage = 'Fields updated from Open Library.';
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _autoFillMessage = 'Auto fill failed: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAutoFilling = false;
+        });
+      }
+    }
   }
 
   @override
@@ -119,6 +193,22 @@ class _AddBookDialogState extends State<_AddBookDialog> {
                 labelText: 'ISBN (optional)',
               ),
             ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _isAutoFilling ? null : _autoFillFromIsbn,
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: Text(_isAutoFilling ? 'Loading...' : 'Auto'),
+              ),
+            ),
+            if (_autoFillMessage != null) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(_autoFillMessage!),
+              ),
+            ],
             const SizedBox(height: 16),
             TextField(
               controller: _pagesController,

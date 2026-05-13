@@ -1,8 +1,21 @@
 part of 'book_page.dart';
 
 extension _BookPageSections on _BookPageState {
-  bool _showAllLibraryColumns(BuildContext context) {
-    return MediaQuery.sizeOf(context).width >= 1000;
+  int _maxVariableColumns(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width >= 1550) {
+      return 6;
+    }
+    if (width >= 1350) {
+      return 5;
+    }
+    if (width >= 1150) {
+      return 4;
+    }
+    if (width >= 900) {
+      return 3;
+    }
+    return 2;
   }
 
   double _responsiveContentWidth(BuildContext context) {
@@ -58,20 +71,18 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
     final maxWidth = _responsiveContentWidth(context);
-    final showAllColumns = _showAllLibraryColumns(context);
     final titleFlex = _titleColumnFlex(books);
-    final secondaryColumn = showAllColumns
-        ? _LibraryColumn.author
-        : _secondaryColumn;
-    final tertiaryColumn = showAllColumns
-        ? _LibraryColumn.status
-        : _tertiaryColumn;
-    final quaternaryColumn = showAllColumns ? _LibraryColumn.rating : null;
-    final secondaryFlex = _libraryColumnFlex(books, secondaryColumn);
-    final tertiaryFlex = _libraryColumnFlex(books, tertiaryColumn);
-    final quaternaryFlex = quaternaryColumn == null
-        ? 0
-        : _libraryColumnFlex(books, quaternaryColumn);
+    final preferredColumns = [..._columnOrder];
+    final additionalColumns = _LibraryColumn.values
+        .where((column) => !preferredColumns.contains(column))
+        .toList();
+    final orderedColumns = [...preferredColumns, ...additionalColumns];
+    final variableColumnCount = _maxVariableColumns(context)
+        .clamp(2, _LibraryColumn.values.length);
+    final visibleColumns = orderedColumns.take(variableColumnCount).toList();
+    final columnFlexes = visibleColumns
+        .map((column) => _libraryColumnFlex(books, column))
+        .toList();
 
     return Center(
       child: ConstrainedBox(
@@ -94,14 +105,9 @@ extension _BookPageSections on _BookPageState {
                     : _buildLibraryCard(
                         theme,
                         books,
-                        showAllColumns,
-                        secondaryColumn,
-                        tertiaryColumn,
-                        quaternaryColumn,
+                        visibleColumns,
                         titleFlex,
-                        secondaryFlex,
-                        tertiaryFlex,
-                        quaternaryFlex,
+                        columnFlexes,
                       ),
               ),
               const SizedBox(height: 16),
@@ -191,14 +197,9 @@ extension _BookPageSections on _BookPageState {
   Widget _buildLibraryCard(
     ThemeData theme,
     List<Book> books,
-    bool showAllColumns,
-    _LibraryColumn secondaryColumn,
-    _LibraryColumn tertiaryColumn,
-    _LibraryColumn? quaternaryColumn,
+    List<_LibraryColumn> visibleColumns,
     int titleFlex,
-    int secondaryFlex,
-    int tertiaryFlex,
-    int quaternaryFlex,
+    List<int> columnFlexes,
   ) {
     return Card(
       child: Padding(
@@ -215,14 +216,9 @@ extension _BookPageSections on _BookPageState {
                 children: [
                   _buildLibraryHeader(
                     theme,
-                    showAllColumns,
-                    secondaryColumn,
-                    tertiaryColumn,
-                    quaternaryColumn,
+                    visibleColumns,
                     titleFlex,
-                    secondaryFlex,
-                    tertiaryFlex,
-                    quaternaryFlex,
+                    columnFlexes,
                   ),
                   const Divider(height: 24),
                   Expanded(
@@ -233,14 +229,9 @@ extension _BookPageSections on _BookPageState {
                         final entry = books[index];
                         return _buildLibraryRow(
                           entry,
-                          showAllColumns,
-                          secondaryColumn,
-                          tertiaryColumn,
-                          quaternaryColumn,
+                          visibleColumns,
                           titleFlex,
-                          secondaryFlex,
-                          tertiaryFlex,
-                          quaternaryFlex,
+                          columnFlexes,
                         );
                       },
                     ),
@@ -253,122 +244,123 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildLibraryHeader(
     ThemeData theme,
-    bool showAllColumns,
-    _LibraryColumn secondaryColumn,
-    _LibraryColumn tertiaryColumn,
-    _LibraryColumn? quaternaryColumn,
+    List<_LibraryColumn> visibleColumns,
     int titleFlex,
-    int secondaryFlex,
-    int tertiaryFlex,
-    int quaternaryFlex,
+    List<int> columnFlexes,
   ) {
+    final children = <Widget>[
+      SizedBox(
+        width: 64,
+        child: Text(
+          'Cover',
+          style: theme.textTheme.labelLarge,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        flex: titleFlex,
+        child: _buildColumnHeader(
+          theme,
+          label: 'Title',
+          canChange: false,
+        ),
+      ),
+    ];
+
+    for (var index = 0; index < visibleColumns.length; index++) {
+      final column = visibleColumns[index];
+      children.add(const SizedBox(width: 16));
+      children.add(
+        Expanded(
+          flex: columnFlexes[index],
+          child: _buildColumnHeader(
+            theme,
+            label: _libraryColumnLabel(column),
+            canChange: true,
+            selectedColumn: column,
+            columnOrderIndex: index,
+          ),
+        ),
+      );
+    }
+
     return Row(
-      children: [
-        Expanded(
-          flex: titleFlex,
-          child: _buildColumnHeader(
-            theme,
-            label: 'Title',
-            canChange: false,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: secondaryFlex,
-          child: _buildColumnHeader(
-            theme,
-            label: _libraryColumnLabel(secondaryColumn),
-            canChange: !showAllColumns,
-            selectedColumn: showAllColumns ? null : secondaryColumn,
-            isSecondaryColumn: true,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: tertiaryFlex,
-          child: _buildColumnHeader(
-            theme,
-            label: _libraryColumnLabel(tertiaryColumn),
-            canChange: !showAllColumns,
-            selectedColumn: showAllColumns ? null : tertiaryColumn,
-            isSecondaryColumn: false,
-          ),
-        ),
-        if (showAllColumns && quaternaryColumn != null) ...[
-          const SizedBox(width: 16),
-          Expanded(
-            flex: quaternaryFlex,
-            child: _buildColumnHeader(
-              theme,
-              label: _libraryColumnLabel(quaternaryColumn),
-              canChange: false,
-            ),
-          ),
-        ],
-      ],
+      children: children,
     );
   }
 
   Widget _buildLibraryRow(
     Book entry,
-    bool showAllColumns,
-    _LibraryColumn secondaryColumn,
-    _LibraryColumn tertiaryColumn,
-    _LibraryColumn? quaternaryColumn,
+    List<_LibraryColumn> visibleColumns,
     int titleFlex,
-    int secondaryFlex,
-    int tertiaryFlex,
-    int quaternaryFlex,
+    List<int> columnFlexes,
   ) {
+    final children = <Widget>[
+      SizedBox(
+        width: 64,
+        height: 92,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: entry.coverUrl != null && entry.coverUrl!.isNotEmpty
+              ? Image.network(
+                  entry.coverUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _buildCoverFallback(context),
+                )
+              : _buildCoverFallback(context),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        flex: titleFlex,
+        child: Text(
+          entry.title,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+        ),
+      ),
+    ];
+
+    for (var index = 0; index < visibleColumns.length; index++) {
+      children.add(const SizedBox(width: 16));
+      children.add(
+        Expanded(
+          flex: columnFlexes[index],
+          child: Text(
+            _libraryColumnValue(entry, visibleColumns[index]),
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+          ),
+        ),
+      );
+    }
+
     return InkWell(
       onTap: () => _openBookDetails(entry),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 8,
-          vertical: 10,
+          vertical: 14,
         ),
         child: Row(
-          children: [
-            Expanded(
-              flex: titleFlex,
-              child: Text(
-                _truncateLibraryText(entry.title),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: secondaryFlex,
-              child: Text(
-                _libraryColumnValue(entry, secondaryColumn),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: tertiaryFlex,
-              child: Text(
-                _libraryColumnValue(entry, tertiaryColumn),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
-            ),
-            if (showAllColumns && quaternaryColumn != null) ...[
-              const SizedBox(width: 16),
-              Expanded(
-                flex: quaternaryFlex,
-                child: Text(
-                  _libraryColumnValue(entry, quaternaryColumn),
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: false,
-                ),
-              ),
-            ],
-          ],
+          children: children,
         ),
+      ),
+    );
+  }
+
+  Widget _buildCoverFallback(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.menu_book_outlined,
+        size: 18,
+        color: theme.colorScheme.onSurfaceVariant,
       ),
     );
   }

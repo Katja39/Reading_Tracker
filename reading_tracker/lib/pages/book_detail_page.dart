@@ -58,6 +58,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         return _EditBookDialog(
           book: _book,
           statuses: widget.statuses,
+          repository: widget.repository,
         );
       },
     );
@@ -73,6 +74,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final pages = submitted.pages;
     final publisher = submitted.publisher;
     final languageCode = submitted.languageCode;
+    final coverUrl = submitted.coverUrl;
     final shouldPromptForRating =
         _book.status != 'read' && status == 'read' && _book.rating == null;
 
@@ -106,6 +108,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       pages: pages,
       publisher: publisher,
       languageCode: languageCode,
+      coverUrl: coverUrl,
     );
     var openRatingDialogAfterSave = false;
 
@@ -121,6 +124,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         pages: pages,
         publisher: publisher,
         languageCode: languageCode,
+        coverUrl: coverUrl,
       );
 
       if (!mounted) {
@@ -186,6 +190,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       pages: _book.pages,
       publisher: _book.publisher,
       languageCode: _book.languageCode,
+      coverUrl: _book.coverUrl,
     );
 
     try {
@@ -200,6 +205,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         pages: _book.pages,
         publisher: _book.publisher,
         languageCode: _book.languageCode,
+        coverUrl: _book.coverUrl,
       );
 
       if (!mounted) {
@@ -346,6 +352,20 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         _book.title,
                         style: theme.textTheme.headlineSmall,
                       ),
+                      if (_book.coverUrl != null && _book.coverUrl!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              _book.coverUrl!,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       _BookDetailRow(label: 'Author', value: _book.author),
                       const SizedBox(height: 12),
@@ -400,6 +420,7 @@ class _EditBookDialogResult {
     required this.pages,
     required this.publisher,
     required this.languageCode,
+    required this.coverUrl,
   });
 
   final String title;
@@ -409,16 +430,19 @@ class _EditBookDialogResult {
   final int? pages;
   final String? publisher;
   final String? languageCode;
+  final String? coverUrl;
 }
 
 class _EditBookDialog extends StatefulWidget {
   const _EditBookDialog({
     required this.book,
     required this.statuses,
+    required this.repository,
   });
 
   final Book book;
   final List<String> statuses;
+  final BookRepository repository;
 
   @override
   State<_EditBookDialog> createState() => _EditBookDialogState();
@@ -431,7 +455,10 @@ class _EditBookDialogState extends State<_EditBookDialog> {
   late final TextEditingController _pagesController;
   late final TextEditingController _publisherController;
   late final TextEditingController _languageCodeController;
+  String? _coverUrl;
   late String _selectedStatus;
+  bool _isAutoFilling = false;
+  String? _autoFillMessage;
 
   @override
   void initState() {
@@ -448,6 +475,7 @@ class _EditBookDialogState extends State<_EditBookDialog> {
     _languageCodeController = TextEditingController(
       text: widget.book.languageCode ?? '',
     );
+    _coverUrl = widget.book.coverUrl;
     _selectedStatus = widget.statuses.contains(widget.book.status)
         ? widget.book.status
         : widget.statuses.first;
@@ -483,8 +511,74 @@ class _EditBookDialogState extends State<_EditBookDialog> {
         languageCode: _languageCodeController.text.trim().isEmpty
             ? null
             : _languageCodeController.text.trim().toLowerCase(),
+        coverUrl: _coverUrl,
       ),
     );
+  }
+
+  Future<void> _autoFillFromIsbn() async {
+    final isbn = _isbnController.text.trim();
+    if (isbn.isEmpty) {
+      setState(() {
+        _autoFillMessage = 'Please enter an ISBN first.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isAutoFilling = true;
+      _autoFillMessage = null;
+    });
+
+    try {
+      final enrichment = await widget.repository.fetchBookEnrichmentByIsbn(
+        isbn: isbn,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      if (enrichment == null) {
+        setState(() {
+          _autoFillMessage = 'No metadata found for this ISBN.';
+        });
+        return;
+      }
+
+      setState(() {
+        if (enrichment.title != null && enrichment.title!.isNotEmpty) {
+          _titleController.text = enrichment.title!;
+        }
+        if (enrichment.author != null && enrichment.author!.isNotEmpty) {
+          _authorController.text = enrichment.author!;
+        }
+        if (enrichment.pages != null) {
+          _pagesController.text = enrichment.pages!.toString();
+        }
+        if (enrichment.publisher != null && enrichment.publisher!.isNotEmpty) {
+          _publisherController.text = enrichment.publisher!;
+        }
+        if (enrichment.languageCode != null &&
+            enrichment.languageCode!.isNotEmpty) {
+          _languageCodeController.text = enrichment.languageCode!;
+        }
+        _coverUrl = enrichment.coverUrl;
+        _autoFillMessage = 'Fields updated from Open Library.';
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _autoFillMessage = 'Auto fill failed: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAutoFilling = false;
+        });
+      }
+    }
   }
 
   @override
@@ -515,6 +609,22 @@ class _EditBookDialogState extends State<_EditBookDialog> {
                 labelText: 'ISBN (optional)',
               ),
             ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _isAutoFilling ? null : _autoFillFromIsbn,
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: Text(_isAutoFilling ? 'Loading...' : 'Auto'),
+              ),
+            ),
+            if (_autoFillMessage != null) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(_autoFillMessage!),
+              ),
+            ],
             const SizedBox(height: 16),
             TextField(
               controller: _pagesController,

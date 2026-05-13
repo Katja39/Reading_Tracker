@@ -10,6 +10,7 @@ class Book {
     this.pages,
     this.publisher,
     this.languageCode,
+    this.coverUrl,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class Book {
   final int? pages;
   final String? publisher;
   final String? languageCode;
+  final String? coverUrl;
 
   factory Book.fromJson(Map<String, dynamic> json) {
     final ratingValue = json['rating'];
@@ -37,6 +39,7 @@ class Book {
       pages: pagesValue is num ? pagesValue.toInt() : null,
       publisher: json['publisher'] as String?,
       languageCode: json['language_code'] as String?,
+      coverUrl: json['cover_url'] as String?,
     );
   }
 }

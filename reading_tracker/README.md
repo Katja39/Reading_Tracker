@@ -5,6 +5,7 @@ Reading Tracker is a Flutter application with a REST backend and PostgreSQL.
 ## Local Setup
 
 1. Copy `.env.example` to `.env` and adjust values as required.
+
 2. Start the database and API:
 
 ```powershell
@@ -88,3 +89,4 @@ docker compose down
 
 - PostgreSQL: `localhost:5432`
 - REST API: `http://localhost:8080`
+- Open Library API: `https://openlibrary.org`

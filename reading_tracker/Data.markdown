@@ -128,6 +128,9 @@ Bereits in Datenbank + API umgesetzt:
 - `languageCode`
   - DB: `books.language_code TEXT`
   - API: `language_code: string | null` (Request/Response)
+- `coverUrl`
+  - DB: `books.cover_url TEXT`
+  - API: `cover_url: string | null` (Request/Response)
 
 Noch nicht umgesetzt (folgt in weiteren Schritten):
 - `startDate`, `endDate`

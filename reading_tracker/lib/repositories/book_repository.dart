@@ -1,4 +1,5 @@
 import '../models/book.dart';
+import '../models/book_enrichment.dart';
 
 abstract class BookRepository {
   Future<List<Book>> fetchBooks();
@@ -12,6 +13,7 @@ abstract class BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   });
 
   Future<Book> updateBook({
@@ -25,9 +27,14 @@ abstract class BookRepository {
     int? pages,
     String? publisher,
     String? languageCode,
+    String? coverUrl,
   });
 
   Future<void> deleteBook({
     required String id,
+  });
+
+  Future<BookEnrichment?> fetchBookEnrichmentByIsbn({
+    required String isbn,
   });
 }
