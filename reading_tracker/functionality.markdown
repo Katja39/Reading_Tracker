@@ -5,7 +5,7 @@
 		X Filterfunktion (nach Autor z.B.)
 		X Möglichkeit angezeigte Informationen zu ändern
 		X Filter, Search, Sort
-		- Autofill aus API mit ISBN
+		X Autofill aus API mit ISBN
 
 - Nebenfunktion:
 Main page:

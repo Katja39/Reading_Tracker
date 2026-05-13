@@ -11,6 +11,12 @@ class Book {
     this.publisher,
     this.languageCode,
     this.coverUrl,
+    this.seriesId,
+    this.volume,
+    this.genreId,
+    this.ageCategory,
+    this.releaseDate,
+    this.format,
   });
 
   final String id;
@@ -24,10 +30,17 @@ class Book {
   final String? publisher;
   final String? languageCode;
   final String? coverUrl;
+  final String? seriesId;
+  final int? volume;
+  final String? genreId;
+  final String? ageCategory;
+  final String? releaseDate;
+  final String? format;
 
   factory Book.fromJson(Map<String, dynamic> json) {
     final ratingValue = json['rating'];
     final pagesValue = json['pages'];
+    final volumeValue = json['volume'];
     return Book(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -40,6 +53,12 @@ class Book {
       publisher: json['publisher'] as String?,
       languageCode: json['language_code'] as String?,
       coverUrl: json['cover_url'] as String?,
+      seriesId: json['series_id'] as String?,
+      volume: volumeValue is num ? volumeValue.toInt() : null,
+      genreId: json['genre_id'] as String?,
+      ageCategory: json['age_category'] as String?,
+      releaseDate: json['release_date'] as String?,
+      format: json['format'] as String?,
     );
   }
 }

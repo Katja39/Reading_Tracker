@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../models/book.dart';
-import '../repositories/book_repository.dart';
-import '../widgets/error_banner.dart';
-import 'book_detail_page.dart';
+import '../../../books/domain/models/book.dart';
+import '../../../books/domain/repositories/book_repository.dart';
+import '../../../books/presentation/pages/book_detail_page.dart';
+import '../../../../shared/widgets/error_banner.dart';
 
-part 'book_page_dialogs.dart';
-part 'book_page_sections.dart';
+part 'book_page_dialog.dart';
+part 'book_page_section.dart';
 
 enum _BookSortField {
   title,
@@ -30,6 +30,12 @@ enum _LibraryColumn {
   pages,
   publisher,
   languageCode,
+  seriesId,
+  volume,
+  genreId,
+  ageCategory,
+  releaseDate,
+  format,
 }
 
 class BookPage extends StatefulWidget {
@@ -76,6 +82,12 @@ class _BookPageState extends State<BookPage> {
     _LibraryColumn.pages,
     _LibraryColumn.publisher,
     _LibraryColumn.languageCode,
+    _LibraryColumn.seriesId,
+    _LibraryColumn.volume,
+    _LibraryColumn.genreId,
+    _LibraryColumn.ageCategory,
+    _LibraryColumn.releaseDate,
+    _LibraryColumn.format,
   ];
   late final TextEditingController _searchController;
   String _searchQuery = '';
@@ -133,6 +145,7 @@ class _BookPageState extends State<BookPage> {
         return _AddBookDialog(
           statuses: _bookStatuses,
           repository: widget.repository,
+          onBooksChanged: _loadBooks,
         );
       },
     );
@@ -150,6 +163,12 @@ class _BookPageState extends State<BookPage> {
     final publisher = submitted.publisher;
     final languageCode = submitted.languageCode;
     final coverUrl = submitted.coverUrl;
+    final seriesId = submitted.seriesId;
+    final volume = submitted.volume;
+    final genreId = submitted.genreId;
+    final ageCategory = submitted.ageCategory;
+    final releaseDate = submitted.releaseDate;
+    final format = submitted.format;
 
     if (title.isEmpty) {
       setState(() {
@@ -181,6 +200,12 @@ class _BookPageState extends State<BookPage> {
         publisher: publisher,
         languageCode: languageCode,
         coverUrl: coverUrl,
+        seriesId: seriesId,
+        volume: volume,
+        genreId: genreId,
+        ageCategory: ageCategory,
+        releaseDate: releaseDate,
+        format: format,
       );
 
       if (!mounted) {
@@ -342,6 +367,18 @@ class _BookPageState extends State<BookPage> {
         return 'Publisher';
       case _LibraryColumn.languageCode:
         return 'Language';
+      case _LibraryColumn.seriesId:
+        return 'Series';
+      case _LibraryColumn.volume:
+        return 'Volume';
+      case _LibraryColumn.genreId:
+        return 'Genre';
+      case _LibraryColumn.ageCategory:
+        return 'Age';
+      case _LibraryColumn.releaseDate:
+        return 'Release';
+      case _LibraryColumn.format:
+        return 'Format';
     }
   }
 
@@ -361,6 +398,18 @@ class _BookPageState extends State<BookPage> {
         return book.publisher ?? '-';
       case _LibraryColumn.languageCode:
         return book.languageCode ?? '-';
+      case _LibraryColumn.seriesId:
+        return book.seriesId ?? '-';
+      case _LibraryColumn.volume:
+        return book.volume?.toString() ?? '-';
+      case _LibraryColumn.genreId:
+        return book.genreId ?? '-';
+      case _LibraryColumn.ageCategory:
+        return book.ageCategory ?? '-';
+      case _LibraryColumn.releaseDate:
+        return book.releaseDate ?? '-';
+      case _LibraryColumn.format:
+        return book.format ?? '-';
     }
   }
 
@@ -512,6 +561,12 @@ class _BookPageState extends State<BookPage> {
         _LibraryColumn.pages,
         _LibraryColumn.publisher,
         _LibraryColumn.languageCode,
+        _LibraryColumn.seriesId,
+        _LibraryColumn.volume,
+        _LibraryColumn.genreId,
+        _LibraryColumn.ageCategory,
+        _LibraryColumn.releaseDate,
+        _LibraryColumn.format,
       ];
     });
   }

@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/book.dart';
-import '../models/book_enrichment.dart';
-import 'book_repository.dart';
+import '../../domain/models/book.dart';
+import '../../domain/repositories/book_repository.dart';
+import '../../../metadata/domain/models/book_enrichment.dart';
 
 class ApiBookRepository implements BookRepository {
   ApiBookRepository({
@@ -37,6 +37,12 @@ class ApiBookRepository implements BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -60,6 +66,24 @@ class ApiBookRepository implements BookRepository {
     }
     if (coverUrl != null) {
       payload['cover_url'] = coverUrl;
+    }
+    if (seriesId != null) {
+      payload['series_id'] = seriesId;
+    }
+    if (volume != null) {
+      payload['volume'] = volume;
+    }
+    if (genreId != null) {
+      payload['genre_id'] = genreId;
+    }
+    if (ageCategory != null) {
+      payload['age_category'] = ageCategory;
+    }
+    if (releaseDate != null) {
+      payload['release_date'] = releaseDate;
+    }
+    if (format != null) {
+      payload['format'] = format;
     }
 
     final response = await _client.post(
@@ -85,6 +109,12 @@ class ApiBookRepository implements BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -109,6 +139,24 @@ class ApiBookRepository implements BookRepository {
     if (coverUrl != null) {
       payload['cover_url'] = coverUrl;
     }
+    if (seriesId != null) {
+      payload['series_id'] = seriesId;
+    }
+    if (volume != null) {
+      payload['volume'] = volume;
+    }
+    if (genreId != null) {
+      payload['genre_id'] = genreId;
+    }
+    if (ageCategory != null) {
+      payload['age_category'] = ageCategory;
+    }
+    if (releaseDate != null) {
+      payload['release_date'] = releaseDate;
+    }
+    if (format != null) {
+      payload['format'] = format;
+    }
 
     final response = await _client.put(
       Uri.parse('$baseUrl/books/$id'),
@@ -131,6 +179,12 @@ class ApiBookRepository implements BookRepository {
         publisher: publisher,
         languageCode: languageCode,
         coverUrl: coverUrl,
+        seriesId: seriesId,
+        volume: volume,
+        genreId: genreId,
+        ageCategory: ageCategory,
+        releaseDate: releaseDate,
+        format: format,
       );
     }
 
@@ -149,6 +203,12 @@ class ApiBookRepository implements BookRepository {
         publisher: publisher,
         languageCode: languageCode,
         coverUrl: coverUrl,
+        seriesId: seriesId,
+        volume: volume,
+        genreId: genreId,
+        ageCategory: ageCategory,
+        releaseDate: releaseDate,
+        format: format,
       );
     }
   }
@@ -214,6 +274,74 @@ class ApiBookRepository implements BookRepository {
     return BookEnrichment.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
+  }
+
+  @override
+  Future<List<String>> fetchSeriesNames() async {
+    final response = await _client.get(Uri.parse('$baseUrl/series'));
+    _throwIfError(response);
+
+    final jsonList = jsonDecode(response.body) as List<dynamic>;
+    return jsonList
+        .map((item) => (item as Map<String, dynamic>)['name'] as String)
+        .where((name) => name.trim().isNotEmpty)
+        .toList();
+  }
+
+  @override
+  Future<void> createSeries({
+    required String name,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/series'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
+    );
+    _throwIfError(response);
+  }
+
+  @override
+  Future<void> deleteSeries({
+    required String name,
+  }) async {
+    final response = await _client.delete(
+      Uri.parse('$baseUrl/series/${Uri.encodeComponent(name)}'),
+    );
+    _throwIfError(response);
+  }
+
+  @override
+  Future<List<String>> fetchGenreNames() async {
+    final response = await _client.get(Uri.parse('$baseUrl/genres'));
+    _throwIfError(response);
+
+    final jsonList = jsonDecode(response.body) as List<dynamic>;
+    return jsonList
+        .map((item) => (item as Map<String, dynamic>)['name'] as String)
+        .where((name) => name.trim().isNotEmpty)
+        .toList();
+  }
+
+  @override
+  Future<void> createGenre({
+    required String name,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/genres'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
+    );
+    _throwIfError(response);
+  }
+
+  @override
+  Future<void> deleteGenre({
+    required String name,
+  }) async {
+    final response = await _client.delete(
+      Uri.parse('$baseUrl/genres/${Uri.encodeComponent(name)}'),
+    );
+    _throwIfError(response);
   }
 
   void _throwIfError(http.Response response) {

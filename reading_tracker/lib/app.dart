@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'pages/book_page.dart';
-import 'repositories/book_repository.dart';
-import 'theme/app_theme.dart';
+import 'features/books/domain/repositories/book_repository.dart';
+import 'features/library/presentation/pages/book_page.dart';
+import 'shared/theme/app_theme.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({

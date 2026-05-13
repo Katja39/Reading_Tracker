@@ -7,6 +7,11 @@ class BookEnrichment {
     this.publisher,
     this.languageCode,
     this.coverUrl,
+    this.seriesId,
+    this.genreId,
+    this.ageCategory,
+    this.releaseDate,
+    this.format,
   });
 
   final String isbn;
@@ -16,6 +21,11 @@ class BookEnrichment {
   final String? publisher;
   final String? languageCode;
   final String? coverUrl;
+  final String? seriesId;
+  final String? genreId;
+  final String? ageCategory;
+  final String? releaseDate;
+  final String? format;
 
   factory BookEnrichment.fromJson(Map<String, dynamic> json) {
     final pagesValue = json['pages'];
@@ -27,6 +37,11 @@ class BookEnrichment {
       publisher: json['publisher'] as String?,
       languageCode: json['language_code'] as String?,
       coverUrl: json['cover_url'] as String?,
+      seriesId: json['series_id'] as String?,
+      genreId: json['genre_id'] as String?,
+      ageCategory: json['age_category'] as String?,
+      releaseDate: json['release_date'] as String?,
+      format: json['format'] as String?,
     );
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reading_tracker/app.dart';
-import 'package:reading_tracker/models/book.dart';
-import 'package:reading_tracker/models/book_enrichment.dart';
-import 'package:reading_tracker/repositories/book_repository.dart';
+import 'package:reading_tracker/features/books/domain/models/book.dart';
+import 'package:reading_tracker/features/books/domain/repositories/book_repository.dart';
+import 'package:reading_tracker/features/metadata/domain/models/book_enrichment.dart';
 
 void main() {
   testWidgets('renders add button and book list', (WidgetTester tester) async {
@@ -319,6 +319,12 @@ class FakeBookRepository implements BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   }) async {
     return Book(
       id: 'book-1',
@@ -332,6 +338,12 @@ class FakeBookRepository implements BookRepository {
       publisher: publisher,
       languageCode: languageCode,
       coverUrl: coverUrl,
+      seriesId: seriesId,
+      volume: volume,
+      genreId: genreId,
+      ageCategory: ageCategory,
+      releaseDate: releaseDate,
+      format: format,
     );
   }
 
@@ -378,6 +390,12 @@ class FakeBookRepository implements BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   }) async {
     return Book(
       id: id,
@@ -391,6 +409,12 @@ class FakeBookRepository implements BookRepository {
       publisher: publisher,
       languageCode: languageCode,
       coverUrl: coverUrl,
+      seriesId: seriesId,
+      volume: volume,
+      genreId: genreId,
+      ageCategory: ageCategory,
+      releaseDate: releaseDate,
+      format: format,
     );
   }
 
@@ -414,5 +438,42 @@ class FakeBookRepository implements BookRepository {
       );
     }
     return null;
+  }
+
+  @override
+  Future<void> createSeries({
+    required String name,
+  }) async {}
+
+  @override
+  Future<void> deleteSeries({
+    required String name,
+  }) async {}
+
+  @override
+  Future<List<String>> fetchSeriesNames() async {
+    return const [
+      'Harry Potter',
+      'The Lord of the Rings',
+    ];
+  }
+
+  @override
+  Future<void> createGenre({
+    required String name,
+  }) async {}
+
+  @override
+  Future<void> deleteGenre({
+    required String name,
+  }) async {}
+
+  @override
+  Future<List<String>> fetchGenreNames() async {
+    return const [
+      'fantasy',
+      'science_fiction',
+      'romance',
+    ];
   }
 }

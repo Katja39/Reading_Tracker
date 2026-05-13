@@ -95,7 +95,7 @@ enum BookStatus {
   dnf,
 }
 
-## Implementierungsstand (Phase 1)
+## Implementierungsstand
 
 Bereits in Datenbank + API umgesetzt:
 - `id`
@@ -131,13 +131,28 @@ Bereits in Datenbank + API umgesetzt:
 - `coverUrl`
   - DB: `books.cover_url TEXT`
   - API: `cover_url: string | null` (Request/Response)
+- `seriesId`
+  - DB: `books.series_id TEXT`
+  - API: `series_id: string | null`
+- `volume`
+  - DB: `books.volume INTEGER` mit Check `volume > 0` (wenn gesetzt)
+  - API: `volume: int | null`
+- `genreId`
+  - DB: `books.genre_id TEXT`
+  - API: `genre_id: string | null`
+- `ageCategory`
+  - DB: `books.age_category TEXT`
+  - API: `age_category: string | null`
+- `releaseDate`
+  - DB: `books.release_date DATE`
+  - API: `release_date: string | null` (`YYYY-MM-DD`)
+- `format`
+  - DB: `books.format TEXT`
+  - API: `format: string | null`
 
 Noch nicht umgesetzt (folgt in weiteren Schritten):
 - `startDate`, `endDate`
 - `highlight`, `lowlight`
-- `seriesId`, `volume`
-- `genreId`, `ageCategory`
-- `releaseDate`, `format`
 - `howAcquired`, `whereAcquired`
 - `authorOriginId`, `authorGender`
 - `acquiredOn`, `priceCents`

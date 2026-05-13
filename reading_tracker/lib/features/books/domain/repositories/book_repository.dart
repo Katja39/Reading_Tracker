@@ -1,5 +1,5 @@
 import '../models/book.dart';
-import '../models/book_enrichment.dart';
+import '../../../metadata/domain/models/book_enrichment.dart';
 
 abstract class BookRepository {
   Future<List<Book>> fetchBooks();
@@ -14,6 +14,12 @@ abstract class BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   });
 
   Future<Book> updateBook({
@@ -28,6 +34,12 @@ abstract class BookRepository {
     String? publisher,
     String? languageCode,
     String? coverUrl,
+    String? seriesId,
+    int? volume,
+    String? genreId,
+    String? ageCategory,
+    String? releaseDate,
+    String? format,
   });
 
   Future<void> deleteBook({
@@ -36,5 +48,25 @@ abstract class BookRepository {
 
   Future<BookEnrichment?> fetchBookEnrichmentByIsbn({
     required String isbn,
+  });
+
+  Future<List<String>> fetchSeriesNames();
+
+  Future<void> createSeries({
+    required String name,
+  });
+
+  Future<void> deleteSeries({
+    required String name,
+  });
+
+  Future<List<String>> fetchGenreNames();
+
+  Future<void> createGenre({
+    required String name,
+  });
+
+  Future<void> deleteGenre({
+    required String name,
   });
 }
