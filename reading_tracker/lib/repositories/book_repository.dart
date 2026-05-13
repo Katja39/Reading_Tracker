@@ -8,6 +8,10 @@ abstract class BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   });
 
   Future<Book> updateBook({
@@ -17,6 +21,10 @@ abstract class BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   });
 
   Future<void> deleteBook({

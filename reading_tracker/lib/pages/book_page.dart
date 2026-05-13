@@ -26,6 +26,10 @@ enum _LibraryColumn {
   author,
   status,
   rating,
+  isbn,
+  pages,
+  publisher,
+  languageCode,
 }
 
 class BookPage extends StatefulWidget {
@@ -132,6 +136,10 @@ class _BookPageState extends State<BookPage> {
     final author = submitted.author;
     final status = submitted.status;
     final rating = submitted.rating;
+    final isbn = submitted.isbn;
+    final pages = submitted.pages;
+    final publisher = submitted.publisher;
+    final languageCode = submitted.languageCode;
 
     if (title.isEmpty) {
       setState(() {
@@ -158,6 +166,10 @@ class _BookPageState extends State<BookPage> {
         author: author,
         status: status,
         rating: rating,
+        isbn: isbn,
+        pages: pages,
+        publisher: publisher,
+        languageCode: languageCode,
       );
 
       if (!mounted) {
@@ -311,6 +323,14 @@ class _BookPageState extends State<BookPage> {
         return 'Status';
       case _LibraryColumn.rating:
         return 'Rating';
+      case _LibraryColumn.isbn:
+        return 'ISBN';
+      case _LibraryColumn.pages:
+        return 'Pages';
+      case _LibraryColumn.publisher:
+        return 'Publisher';
+      case _LibraryColumn.languageCode:
+        return 'Language';
     }
   }
 
@@ -322,7 +342,19 @@ class _BookPageState extends State<BookPage> {
         return book.status;
       case _LibraryColumn.rating:
         return _formatRating(book.rating);
+      case _LibraryColumn.isbn:
+        return book.isbn ?? '-';
+      case _LibraryColumn.pages:
+        return book.pages?.toString() ?? '-';
+      case _LibraryColumn.publisher:
+        return _truncateLibraryText(book.publisher ?? '-');
+      case _LibraryColumn.languageCode:
+        return book.languageCode ?? '-';
     }
+  }
+
+  _LibraryColumn _firstAvailableColumn(_LibraryColumn disallowed) {
+    return _LibraryColumn.values.firstWhere((column) => column != disallowed);
   }
 
   String _truncateLibraryText(String value) {
@@ -379,16 +411,12 @@ class _BookPageState extends State<BookPage> {
       if (isSecondaryColumn) {
         _secondaryColumn = column;
         if (_tertiaryColumn == column) {
-          _tertiaryColumn = _secondaryColumn == _LibraryColumn.author
-              ? _LibraryColumn.status
-              : _LibraryColumn.author;
+          _tertiaryColumn = _firstAvailableColumn(_secondaryColumn);
         }
       } else {
         _tertiaryColumn = column;
         if (_secondaryColumn == column) {
-          _secondaryColumn = _tertiaryColumn == _LibraryColumn.author
-              ? _LibraryColumn.status
-              : _LibraryColumn.author;
+          _secondaryColumn = _firstAvailableColumn(_tertiaryColumn);
         }
       }
     });
@@ -612,7 +640,7 @@ class _BookPageState extends State<BookPage> {
     final books = _sortBooks(_searchBooks(_filterBooks(_books)));
     final isDarkMode = widget.themeMode == ThemeMode.dark;
     final isMobile = MediaQuery.sizeOf(context).width < 700;
-    final tabIndex = isMobile ? _selectedTabIndex : 1;
+    final tabIndex = _selectedTabIndex;
     final (title, content) = switch (tabIndex) {
       0 => ('Home', this._buildStartTab(theme)),
       1 => ('Library', this._buildLibraryTab(theme, books)),
@@ -624,6 +652,36 @@ class _BookPageState extends State<BookPage> {
         title: Text(title),
         backgroundColor: theme.colorScheme.surface,
         actions: [
+          if (!isMobile) ...[
+            _TopNavButton(
+              label: 'Home',
+              isSelected: tabIndex == 0,
+              onPressed: () {
+                setState(() {
+                  _selectedTabIndex = 0;
+                });
+              },
+            ),
+            _TopNavButton(
+              label: 'Library',
+              isSelected: tabIndex == 1,
+              onPressed: () {
+                setState(() {
+                  _selectedTabIndex = 1;
+                });
+              },
+            ),
+            _TopNavButton(
+              label: 'Empty',
+              isSelected: tabIndex == 2,
+              onPressed: () {
+                setState(() {
+                  _selectedTabIndex = 2;
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           PopupMenuButton<String>(
             tooltip: 'Settings',
             icon: const Icon(Icons.settings_outlined),
@@ -677,6 +735,43 @@ class _BookPageState extends State<BookPage> {
               ],
             )
           : null,
+    );
+  }
+}
+
+class _TopNavButton extends StatelessWidget {
+  const _TopNavButton({
+    required this.label,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: isSelected
+              ? theme.colorScheme.onPrimaryContainer
+              : theme.colorScheme.onSurface,
+          backgroundColor: isSelected
+              ? theme.colorScheme.primaryContainer
+              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(label),
+      ),
     );
   }
 }

@@ -30,6 +30,10 @@ class CreateBookRequest(BaseModel):
     author: str = Field(min_length=1, max_length=255)
     status: str = Field(min_length=1, max_length=50)
     rating: float | None = Field(default=None, ge=0, le=5)
+    isbn: str | None = Field(default=None, max_length=32)
+    pages: int | None = Field(default=None, ge=1, le=100000)
+    publisher: str | None = Field(default=None, max_length=255)
+    language_code: str | None = Field(default=None, min_length=2, max_length=10)
 
 
 class UpdateBookRequest(BaseModel):
@@ -37,6 +41,10 @@ class UpdateBookRequest(BaseModel):
     author: str = Field(min_length=1, max_length=255)
     status: str = Field(min_length=1, max_length=50)
     rating: float | None = Field(default=None, ge=0, le=5)
+    isbn: str | None = Field(default=None, max_length=32)
+    pages: int | None = Field(default=None, ge=1, le=100000)
+    publisher: str | None = Field(default=None, max_length=255)
+    language_code: str | None = Field(default=None, min_length=2, max_length=10)
 
 
 class BookResponse(BaseModel):
@@ -46,6 +54,10 @@ class BookResponse(BaseModel):
     author: str
     status: str
     rating: float | None
+    isbn: str | None
+    pages: int | None
+    publisher: str | None
+    language_code: str | None
 
 
 app = FastAPI(title="Reading Tracker API")
@@ -109,7 +121,11 @@ def list_books() -> list[dict[str, Any]]:
                     title,
                     author,
                     status,
-                    rating
+                    rating,
+                    isbn,
+                    pages,
+                    publisher,
+                    language_code
                 FROM books
                 WHERE user_id = %s
                 ORDER BY title ASC
@@ -127,15 +143,21 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO books (user_id, title, author, status, rating)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO books (
+                    user_id, title, author, status, rating, isbn, pages, publisher, language_code
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING
                     id::text AS id,
                     user_id::text AS user_id,
                     title,
                     author,
                     status,
-                    rating
+                    rating,
+                    isbn,
+                    pages,
+                    publisher,
+                    language_code
                 """,
                 (
                     DEFAULT_USER_ID,
@@ -143,6 +165,10 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     payload.author.strip(),
                     normalize_status(payload.status),
                     payload.rating,
+                    payload.isbn.strip() if payload.isbn else None,
+                    payload.pages,
+                    payload.publisher.strip() if payload.publisher else None,
+                    payload.language_code.strip().lower() if payload.language_code else None,
                 ),
             )
             return cursor.fetchone()
@@ -161,7 +187,11 @@ def update_book(
                 SET title = %s,
                     author = %s,
                     status = %s,
-                    rating = %s
+                    rating = %s,
+                    isbn = %s,
+                    pages = %s,
+                    publisher = %s,
+                    language_code = %s
                 WHERE id = %s AND user_id = %s
                 RETURNING
                     id::text AS id,
@@ -169,13 +199,21 @@ def update_book(
                     title,
                     author,
                     status,
-                    rating
+                    rating,
+                    isbn,
+                    pages,
+                    publisher,
+                    language_code
                 """,
                 (
                     payload.title.strip(),
                     payload.author.strip(),
                     normalize_status(payload.status),
                     payload.rating,
+                    payload.isbn.strip() if payload.isbn else None,
+                    payload.pages,
+                    payload.publisher.strip() if payload.publisher else None,
+                    payload.language_code.strip().lower() if payload.language_code else None,
                     book_id,
                     DEFAULT_USER_ID,
                 ),

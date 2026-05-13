@@ -69,6 +69,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final title = submitted.title;
     final author = submitted.author;
     final status = submitted.status;
+    final isbn = submitted.isbn;
+    final pages = submitted.pages;
+    final publisher = submitted.publisher;
+    final languageCode = submitted.languageCode;
     final shouldPromptForRating =
         _book.status != 'read' && status == 'read' && _book.rating == null;
 
@@ -98,6 +102,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
       author: author,
       status: status,
       rating: _book.rating,
+      isbn: isbn,
+      pages: pages,
+      publisher: publisher,
+      languageCode: languageCode,
     );
     var openRatingDialogAfterSave = false;
 
@@ -109,6 +117,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
         author: author,
         status: status,
         rating: _book.rating,
+        isbn: isbn,
+        pages: pages,
+        publisher: publisher,
+        languageCode: languageCode,
       );
 
       if (!mounted) {
@@ -170,6 +182,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
       author: _book.author,
       status: _book.status,
       rating: rating,
+      isbn: _book.isbn,
+      pages: _book.pages,
+      publisher: _book.publisher,
+      languageCode: _book.languageCode,
     );
 
     try {
@@ -180,6 +196,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
         author: _book.author,
         status: _book.status,
         rating: rating,
+        isbn: _book.isbn,
+        pages: _book.pages,
+        publisher: _book.publisher,
+        languageCode: _book.languageCode,
       );
 
       if (!mounted) {
@@ -265,9 +285,25 @@ class _BookDetailPageState extends State<BookDetailPage> {
     Navigator.of(context).pop(BookDetailResult.updated(_book));
   }
 
+  double _responsiveContentWidth(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    if (screenWidth >= 1600) {
+      return 1100;
+    }
+    if (screenWidth >= 1200) {
+      return 920;
+    }
+    if (screenWidth >= 900) {
+      return 760;
+    }
+    return screenWidth;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final maxWidth = _responsiveContentWidth(context);
 
     return WillPopScope(
       onWillPop: () async {
@@ -297,7 +333,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         ),
         body: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Card(
@@ -314,6 +350,26 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       _BookDetailRow(label: 'Author', value: _book.author),
                       const SizedBox(height: 12),
                       _BookDetailRow(label: 'Status', value: _book.status),
+                      const SizedBox(height: 12),
+                      _BookDetailRow(
+                        label: 'ISBN',
+                        value: _book.isbn ?? '-',
+                      ),
+                      const SizedBox(height: 12),
+                      _BookDetailRow(
+                        label: 'Pages',
+                        value: _book.pages?.toString() ?? '-',
+                      ),
+                      const SizedBox(height: 12),
+                      _BookDetailRow(
+                        label: 'Publisher',
+                        value: _book.publisher ?? '-',
+                      ),
+                      const SizedBox(height: 12),
+                      _BookDetailRow(
+                        label: 'Language',
+                        value: _book.languageCode ?? '-',
+                      ),
                       const SizedBox(height: 12),
                       _BookRatingRow(
                         rating: _book.rating,
@@ -340,11 +396,19 @@ class _EditBookDialogResult {
     required this.title,
     required this.author,
     required this.status,
+    required this.isbn,
+    required this.pages,
+    required this.publisher,
+    required this.languageCode,
   });
 
   final String title;
   final String author;
   final String status;
+  final String? isbn;
+  final int? pages;
+  final String? publisher;
+  final String? languageCode;
 }
 
 class _EditBookDialog extends StatefulWidget {
@@ -363,6 +427,10 @@ class _EditBookDialog extends StatefulWidget {
 class _EditBookDialogState extends State<_EditBookDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorController;
+  late final TextEditingController _isbnController;
+  late final TextEditingController _pagesController;
+  late final TextEditingController _publisherController;
+  late final TextEditingController _languageCodeController;
   late String _selectedStatus;
 
   @override
@@ -370,6 +438,16 @@ class _EditBookDialogState extends State<_EditBookDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.book.title);
     _authorController = TextEditingController(text: widget.book.author);
+    _isbnController = TextEditingController(text: widget.book.isbn ?? '');
+    _pagesController = TextEditingController(
+      text: widget.book.pages?.toString() ?? '',
+    );
+    _publisherController = TextEditingController(
+      text: widget.book.publisher ?? '',
+    );
+    _languageCodeController = TextEditingController(
+      text: widget.book.languageCode ?? '',
+    );
     _selectedStatus = widget.statuses.contains(widget.book.status)
         ? widget.book.status
         : widget.statuses.first;
@@ -379,15 +457,32 @@ class _EditBookDialogState extends State<_EditBookDialog> {
   void dispose() {
     _titleController.dispose();
     _authorController.dispose();
+    _isbnController.dispose();
+    _pagesController.dispose();
+    _publisherController.dispose();
+    _languageCodeController.dispose();
     super.dispose();
   }
 
   void _submit() {
+    final pagesText = _pagesController.text.trim();
+    final pages = pagesText.isEmpty ? null : int.tryParse(pagesText);
+
     Navigator.of(context).pop(
       _EditBookDialogResult(
         title: _titleController.text.trim(),
         author: _authorController.text.trim(),
         status: _selectedStatus,
+        isbn: _isbnController.text.trim().isEmpty
+            ? null
+            : _isbnController.text.trim(),
+        pages: pages,
+        publisher: _publisherController.text.trim().isEmpty
+            ? null
+            : _publisherController.text.trim(),
+        languageCode: _languageCodeController.text.trim().isEmpty
+            ? null
+            : _languageCodeController.text.trim().toLowerCase(),
       ),
     );
   }
@@ -396,46 +491,78 @@ class _EditBookDialogState extends State<_EditBookDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Edit Book'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Title',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _authorController,
-            decoration: const InputDecoration(
-              labelText: 'Author',
+            const SizedBox(height: 16),
+            TextField(
+              controller: _authorController,
+              decoration: const InputDecoration(
+                labelText: 'Author',
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedStatus,
-            decoration: const InputDecoration(
-              labelText: 'Status',
+            const SizedBox(height: 16),
+            TextField(
+              controller: _isbnController,
+              decoration: const InputDecoration(
+                labelText: 'ISBN (optional)',
+              ),
             ),
-            items: widget.statuses
-                .map(
-                  (status) => DropdownMenuItem(
-                    value: status,
-                    child: Text(status),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _selectedStatus = value;
-              });
-            },
-          ),
-        ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: _pagesController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Pages (optional)',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _publisherController,
+              decoration: const InputDecoration(
+                labelText: 'Publisher (optional)',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _languageCodeController,
+              decoration: const InputDecoration(
+                labelText: 'Language code (optional)',
+                hintText: 'e.g. en, de',
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedStatus,
+              decoration: const InputDecoration(
+                labelText: 'Status',
+              ),
+              items: widget.statuses
+                  .map(
+                    (status) => DropdownMenuItem(
+                      value: status,
+                      child: Text(status),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _selectedStatus = value;
+                });
+              },
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

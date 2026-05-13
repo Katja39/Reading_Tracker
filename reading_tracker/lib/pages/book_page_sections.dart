@@ -1,10 +1,34 @@
 part of 'book_page.dart';
 
 extension _BookPageSections on _BookPageState {
+  bool _showAllLibraryColumns(BuildContext context) {
+    return MediaQuery.sizeOf(context).width >= 1000;
+  }
+
+  double _responsiveContentWidth(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    if (screenWidth >= 1600) {
+      return 1360;
+    }
+    if (screenWidth >= 1300) {
+      return 1120;
+    }
+    if (screenWidth >= 1000) {
+      return 920;
+    }
+    if (screenWidth >= 800) {
+      return 760;
+    }
+    return screenWidth;
+  }
+
   Widget _buildStartTab(ThemeData theme) {
+    final maxWidth = _responsiveContentWidth(context);
+
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Card(
@@ -33,13 +57,25 @@ extension _BookPageSections on _BookPageState {
   }
 
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
+    final maxWidth = _responsiveContentWidth(context);
+    final showAllColumns = _showAllLibraryColumns(context);
     final titleFlex = _titleColumnFlex(books);
-    final secondaryFlex = _libraryColumnFlex(books, _secondaryColumn);
-    final tertiaryFlex = _libraryColumnFlex(books, _tertiaryColumn);
+    final secondaryColumn = showAllColumns
+        ? _LibraryColumn.author
+        : _secondaryColumn;
+    final tertiaryColumn = showAllColumns
+        ? _LibraryColumn.status
+        : _tertiaryColumn;
+    final quaternaryColumn = showAllColumns ? _LibraryColumn.rating : null;
+    final secondaryFlex = _libraryColumnFlex(books, secondaryColumn);
+    final tertiaryFlex = _libraryColumnFlex(books, tertiaryColumn);
+    final quaternaryFlex = quaternaryColumn == null
+        ? 0
+        : _libraryColumnFlex(books, quaternaryColumn);
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Column(
@@ -58,9 +94,14 @@ extension _BookPageSections on _BookPageState {
                     : _buildLibraryCard(
                         theme,
                         books,
+                        showAllColumns,
+                        secondaryColumn,
+                        tertiaryColumn,
+                        quaternaryColumn,
                         titleFlex,
                         secondaryFlex,
                         tertiaryFlex,
+                        quaternaryFlex,
                       ),
               ),
               const SizedBox(height: 16),
@@ -150,9 +191,14 @@ extension _BookPageSections on _BookPageState {
   Widget _buildLibraryCard(
     ThemeData theme,
     List<Book> books,
+    bool showAllColumns,
+    _LibraryColumn secondaryColumn,
+    _LibraryColumn tertiaryColumn,
+    _LibraryColumn? quaternaryColumn,
     int titleFlex,
     int secondaryFlex,
     int tertiaryFlex,
+    int quaternaryFlex,
   ) {
     return Card(
       child: Padding(
@@ -169,9 +215,14 @@ extension _BookPageSections on _BookPageState {
                 children: [
                   _buildLibraryHeader(
                     theme,
+                    showAllColumns,
+                    secondaryColumn,
+                    tertiaryColumn,
+                    quaternaryColumn,
                     titleFlex,
                     secondaryFlex,
                     tertiaryFlex,
+                    quaternaryFlex,
                   ),
                   const Divider(height: 24),
                   Expanded(
@@ -182,9 +233,14 @@ extension _BookPageSections on _BookPageState {
                         final entry = books[index];
                         return _buildLibraryRow(
                           entry,
+                          showAllColumns,
+                          secondaryColumn,
+                          tertiaryColumn,
+                          quaternaryColumn,
                           titleFlex,
                           secondaryFlex,
                           tertiaryFlex,
+                          quaternaryFlex,
                         );
                       },
                     ),
@@ -197,9 +253,14 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildLibraryHeader(
     ThemeData theme,
+    bool showAllColumns,
+    _LibraryColumn secondaryColumn,
+    _LibraryColumn tertiaryColumn,
+    _LibraryColumn? quaternaryColumn,
     int titleFlex,
     int secondaryFlex,
     int tertiaryFlex,
+    int quaternaryFlex,
   ) {
     return Row(
       children: [
@@ -216,9 +277,9 @@ extension _BookPageSections on _BookPageState {
           flex: secondaryFlex,
           child: _buildColumnHeader(
             theme,
-            label: _libraryColumnLabel(_secondaryColumn),
-            canChange: true,
-            selectedColumn: _secondaryColumn,
+            label: _libraryColumnLabel(secondaryColumn),
+            canChange: !showAllColumns,
+            selectedColumn: showAllColumns ? null : secondaryColumn,
             isSecondaryColumn: true,
           ),
         ),
@@ -227,21 +288,37 @@ extension _BookPageSections on _BookPageState {
           flex: tertiaryFlex,
           child: _buildColumnHeader(
             theme,
-            label: _libraryColumnLabel(_tertiaryColumn),
-            canChange: true,
-            selectedColumn: _tertiaryColumn,
+            label: _libraryColumnLabel(tertiaryColumn),
+            canChange: !showAllColumns,
+            selectedColumn: showAllColumns ? null : tertiaryColumn,
             isSecondaryColumn: false,
           ),
         ),
+        if (showAllColumns && quaternaryColumn != null) ...[
+          const SizedBox(width: 16),
+          Expanded(
+            flex: quaternaryFlex,
+            child: _buildColumnHeader(
+              theme,
+              label: _libraryColumnLabel(quaternaryColumn),
+              canChange: false,
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildLibraryRow(
     Book entry,
+    bool showAllColumns,
+    _LibraryColumn secondaryColumn,
+    _LibraryColumn tertiaryColumn,
+    _LibraryColumn? quaternaryColumn,
     int titleFlex,
     int secondaryFlex,
     int tertiaryFlex,
+    int quaternaryFlex,
   ) {
     return InkWell(
       onTap: () => _openBookDetails(entry),
@@ -265,7 +342,7 @@ extension _BookPageSections on _BookPageState {
             Expanded(
               flex: secondaryFlex,
               child: Text(
-                _libraryColumnValue(entry, _secondaryColumn),
+                _libraryColumnValue(entry, secondaryColumn),
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
               ),
@@ -274,11 +351,22 @@ extension _BookPageSections on _BookPageState {
             Expanded(
               flex: tertiaryFlex,
               child: Text(
-                _libraryColumnValue(entry, _tertiaryColumn),
+                _libraryColumnValue(entry, tertiaryColumn),
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
               ),
             ),
+            if (showAllColumns && quaternaryColumn != null) ...[
+              const SizedBox(width: 16),
+              Expanded(
+                flex: quaternaryFlex,
+                child: Text(
+                  _libraryColumnValue(entry, quaternaryColumn),
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
+              ),
+            ],
           ],
         ),
       ),

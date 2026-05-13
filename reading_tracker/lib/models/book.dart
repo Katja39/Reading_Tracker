@@ -6,6 +6,10 @@ class Book {
     required this.author,
     required this.status,
     this.rating,
+    this.isbn,
+    this.pages,
+    this.publisher,
+    this.languageCode,
   });
 
   final String id;
@@ -14,9 +18,14 @@ class Book {
   final String author;
   final String status;
   final double? rating;
+  final String? isbn;
+  final int? pages;
+  final String? publisher;
+  final String? languageCode;
 
   factory Book.fromJson(Map<String, dynamic> json) {
     final ratingValue = json['rating'];
+    final pagesValue = json['pages'];
     return Book(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -24,6 +33,10 @@ class Book {
       author: json['author'] as String,
       status: json['status'] as String,
       rating: ratingValue is num ? ratingValue.toDouble() : null,
+      isbn: json['isbn'] as String?,
+      pages: pagesValue is num ? pagesValue.toInt() : null,
+      publisher: json['publisher'] as String?,
+      languageCode: json['language_code'] as String?,
     );
   }
 }

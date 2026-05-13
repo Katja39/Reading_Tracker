@@ -94,3 +94,49 @@ enum BookStatus {
   paused,
   dnf,
 }
+
+## Implementierungsstand (Phase 1)
+
+Bereits in Datenbank + API umgesetzt:
+- `id`
+  - DB: `books.id UUID PRIMARY KEY`
+  - API: `id: string`
+- `userId`
+  - DB: `books.user_id UUID` (FK auf `users.id`)
+  - API: `user_id: string`
+- `title`
+  - DB: `books.title TEXT NOT NULL`
+  - API: `title: string`
+- `author`
+  - DB: `books.author TEXT NOT NULL`
+  - API: `author: string`
+- `status`
+  - DB: `books.status TEXT NOT NULL DEFAULT 'unread'`
+  - API: `status: string` (`unread|reading|read|paused|dnf`)
+- `rating`
+  - DB: `books.rating DOUBLE PRECISION`
+  - API: `rating: float | null`
+- `isbn`
+  - DB: `books.isbn TEXT`
+  - API: `isbn: string | null`
+- `pages`
+  - DB: `books.pages INTEGER` mit Check `pages > 0` (wenn gesetzt)
+  - API: `pages: int | null`
+- `publisher`
+  - DB: `books.publisher TEXT`
+  - API: `publisher: string | null`
+- `languageCode`
+  - DB: `books.language_code TEXT`
+  - API: `language_code: string | null` (Request/Response)
+
+Noch nicht umgesetzt (folgt in weiteren Schritten):
+- `startDate`, `endDate`
+- `highlight`, `lowlight`
+- `seriesId`, `volume`
+- `genreId`, `ageCategory`
+- `releaseDate`, `format`
+- `howAcquired`, `whereAcquired`
+- `authorOriginId`, `authorGender`
+- `acquiredOn`, `priceCents`
+- `notes`, `totalReadingMinutes`
+- `createdAt`, `updatedAt`, `deletedAt`

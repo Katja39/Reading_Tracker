@@ -31,6 +31,10 @@ class ApiBookRepository implements BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -39,6 +43,18 @@ class ApiBookRepository implements BookRepository {
     };
     if (rating != null) {
       payload['rating'] = rating;
+    }
+    if (isbn != null) {
+      payload['isbn'] = isbn;
+    }
+    if (pages != null) {
+      payload['pages'] = pages;
+    }
+    if (publisher != null) {
+      payload['publisher'] = publisher;
+    }
+    if (languageCode != null) {
+      payload['language_code'] = languageCode;
     }
 
     final response = await _client.post(
@@ -59,6 +75,10 @@ class ApiBookRepository implements BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -67,6 +87,18 @@ class ApiBookRepository implements BookRepository {
     };
     if (rating != null) {
       payload['rating'] = rating;
+    }
+    if (isbn != null) {
+      payload['isbn'] = isbn;
+    }
+    if (pages != null) {
+      payload['pages'] = pages;
+    }
+    if (publisher != null) {
+      payload['publisher'] = publisher;
+    }
+    if (languageCode != null) {
+      payload['language_code'] = languageCode;
     }
 
     final response = await _client.put(
@@ -85,6 +117,10 @@ class ApiBookRepository implements BookRepository {
         author: author,
         status: status,
         rating: rating,
+        isbn: isbn,
+        pages: pages,
+        publisher: publisher,
+        languageCode: languageCode,
       );
     }
 
@@ -98,6 +134,10 @@ class ApiBookRepository implements BookRepository {
         author: author,
         status: status,
         rating: rating,
+        isbn: isbn,
+        pages: pages,
+        publisher: publisher,
+        languageCode: languageCode,
       );
     }
   }

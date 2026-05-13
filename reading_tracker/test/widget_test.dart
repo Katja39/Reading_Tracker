@@ -313,6 +313,10 @@ class FakeBookRepository implements BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   }) async {
     return Book(
       id: 'book-1',
@@ -321,6 +325,10 @@ class FakeBookRepository implements BookRepository {
       author: author,
       status: status,
       rating: rating,
+      isbn: isbn,
+      pages: pages,
+      publisher: publisher,
+      languageCode: languageCode,
     );
   }
 
@@ -362,6 +370,10 @@ class FakeBookRepository implements BookRepository {
     required String author,
     required String status,
     double? rating,
+    String? isbn,
+    int? pages,
+    String? publisher,
+    String? languageCode,
   }) async {
     return Book(
       id: id,
@@ -370,6 +382,10 @@ class FakeBookRepository implements BookRepository {
       author: author,
       status: status,
       rating: rating,
+      isbn: isbn,
+      pages: pages,
+      publisher: publisher,
+      languageCode: languageCode,
     );
   }
 
