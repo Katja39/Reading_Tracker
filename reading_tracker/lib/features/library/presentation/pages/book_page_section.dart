@@ -383,7 +383,7 @@ extension _BookPageSections on _BookPageState {
     );
   }
 
-  Widget _buildEmptyTab(ThemeData theme) {
+  Widget _buildStatisticsTab(ThemeData theme) {
     return Center(
       child: Text(
         'This page is empty.',

@@ -576,94 +576,108 @@ class _BookPageState extends State<BookPage> {
       context: context,
       showDragHandle: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Sort by:', style: theme.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                Row(
+        return StatefulBuilder(
+          builder: (context, sheetSetState) {
+            void refreshSheet() {
+              sheetSetState(() {});
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: DropdownButtonFormField<_BookSortField>(
-                        initialValue: _sortField,
-                        items: _sortFieldItems(),
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _sortField = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _isSortAscending = !_isSortAscending;
-                        });
-                      },
-                      tooltip: _isSortAscending ? 'Ascending' : 'Descending',
-                      icon: AnimatedRotation(
-                        duration: const Duration(milliseconds: 180),
-                        turns: _isSortAscending ? 0 : 0.5,
-                        child: const Icon(Icons.arrow_upward),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text('Filter by:', style: theme.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<_BookFilterField>(
-                  initialValue: _filterField,
-                  items: _filterFieldItems(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _filterField = value;
-                      _filterValue = 'all';
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text('Value:', style: theme.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: _filterValue,
-                  items: [
-                    const DropdownMenuItem(
-                      value: 'all',
-                      child: Text('All'),
-                    ),
-                    ..._filterOptions().map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(
-                          _formatFilterOptionLabel(value),
+                    Text('Sort by:', style: theme.textTheme.labelMedium),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<_BookSortField>(
+                            initialValue: _sortField,
+                            items: _sortFieldItems(),
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _sortField = value;
+                              });
+                              refreshSheet();
+                            },
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isSortAscending = !_isSortAscending;
+                            });
+                            refreshSheet();
+                          },
+                          tooltip: _isSortAscending
+                              ? 'Ascending'
+                              : 'Descending',
+                          icon: AnimatedRotation(
+                            duration: const Duration(milliseconds: 180),
+                            turns: _isSortAscending ? 0 : 0.5,
+                            child: const Icon(Icons.arrow_upward),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Filter by:', style: theme.textTheme.labelMedium),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<_BookFilterField>(
+                      initialValue: _filterField,
+                      items: _filterFieldItems(),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          _filterField = value;
+                          _filterValue = 'all';
+                        });
+                        refreshSheet();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Value:', style: theme.textTheme.labelMedium),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: _filterValue,
+                      items: [
+                        const DropdownMenuItem(
+                          value: 'all',
+                          child: Text('All'),
+                        ),
+                        ..._filterOptions().map(
+                          (value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(
+                              _formatFilterOptionLabel(value),
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          _filterValue = value;
+                        });
+                        refreshSheet();
+                      },
                     ),
                   ],
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _filterValue = value;
-                    });
-                  },
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -709,7 +723,7 @@ class _BookPageState extends State<BookPage> {
     final (title, content) = switch (tabIndex) {
       0 => ('Home', this._buildStartTab(theme)),
       1 => ('Library', this._buildLibraryTab(theme, books)),
-      _ => ('Empty', this._buildEmptyTab(theme)),
+      _ => ('Statistics', this._buildStatisticsTab(theme)),
     };
 
     return Scaffold(
@@ -737,7 +751,7 @@ class _BookPageState extends State<BookPage> {
               },
             ),
             _TopNavButton(
-              label: 'Empty',
+              label: 'Statistics',
               isSelected: tabIndex == 2,
               onPressed: () {
                 setState(() {
@@ -795,7 +809,7 @@ class _BookPageState extends State<BookPage> {
                 NavigationDestination(
                   icon: Icon(Icons.more_horiz),
                   selectedIcon: Icon(Icons.more_horiz),
-                  label: 'Empty',
+                  label: 'Statistics',
                 ),
               ],
             )

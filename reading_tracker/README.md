@@ -50,6 +50,7 @@ For local testing on an emulator or device:
 ```powershell
 flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8080
 ```
+show devices: flutter devices/emulators
 
 For a physical device on the same network, use the host machine IP instead of `10.0.2.2`, for example:
 

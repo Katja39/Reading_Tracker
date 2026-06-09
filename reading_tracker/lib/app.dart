@@ -4,6 +4,19 @@ import 'features/books/domain/repositories/book_repository.dart';
 import 'features/library/presentation/pages/book_page.dart';
 import 'shared/theme/app_theme.dart';
 
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
@@ -31,6 +44,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Reading Tracker',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const _AppScrollBehavior(),
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,

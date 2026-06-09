@@ -24,6 +24,65 @@ def ensure_default_user(connection: psycopg.Connection) -> None:
         )
 
 
+def ensure_schema(connection: psycopg.Connection) -> None:
+    statements = [
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS series (
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            PRIMARY KEY (user_id, name)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS genres (
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT true,
+            PRIMARY KEY (user_id, name)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS books (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            author TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'unread',
+            rating DOUBLE PRECISION
+        )
+        """,
+        """
+        ALTER TABLE books
+        ADD COLUMN IF NOT EXISTS isbn TEXT,
+        ADD COLUMN IF NOT EXISTS pages INTEGER,
+        ADD COLUMN IF NOT EXISTS publisher TEXT,
+        ADD COLUMN IF NOT EXISTS language_code TEXT,
+        ADD COLUMN IF NOT EXISTS cover_url TEXT,
+        ADD COLUMN IF NOT EXISTS series_id TEXT,
+        ADD COLUMN IF NOT EXISTS volume INTEGER,
+        ADD COLUMN IF NOT EXISTS genre_id TEXT,
+        ADD COLUMN IF NOT EXISTS age_category TEXT,
+        ADD COLUMN IF NOT EXISTS release_date DATE,
+        ADD COLUMN IF NOT EXISTS format TEXT
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_books_user_title ON books(user_id, title)
+        """,
+    ]
+
+    with connection.cursor() as cursor:
+        for statement in statements:
+            cursor.execute(statement)
+
+
 def ensure_default_genres(connection: psycopg.Connection) -> None:
     default_genres = [
         "fantasy",
@@ -59,4 +118,3 @@ def ensure_default_genres(connection: psycopg.Connection) -> None:
                 """,
                 (DEFAULT_USER_ID, genre),
             )
-
