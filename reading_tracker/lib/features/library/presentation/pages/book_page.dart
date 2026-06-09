@@ -9,21 +9,8 @@ import '../../../../shared/widgets/error_banner.dart';
 part 'book_page_dialog.dart';
 part 'book_page_section.dart';
 
-enum _BookSortField {
+enum _LibraryField {
   title,
-  author,
-  status,
-  rating,
-}
-
-enum _BookFilterField {
-  title,
-  author,
-  status,
-  rating,
-}
-
-enum _LibraryColumn {
   author,
   status,
   rating,
@@ -37,6 +24,12 @@ enum _LibraryColumn {
   ageCategory,
   releaseDate,
   format,
+}
+
+enum _LibraryControlPanel {
+  sort,
+  filter,
+  display,
 }
 
 class BookPage extends StatefulWidget {
@@ -58,6 +51,7 @@ class BookPage extends StatefulWidget {
 class _BookPageState extends State<BookPage> {
   static const _menuActionSortFilter = 'sort_filter';
   static const _menuActionResetFilter = 'reset_filter';
+  static const _maxMobileInfoColumns = 6;
   static const _bookStatuses = [
     'unread',
     'reading',
@@ -65,44 +59,105 @@ class _BookPageState extends State<BookPage> {
     'paused',
     'dnf',
   ];
+  static const _configurableFields = [
+    _LibraryField.author,
+    _LibraryField.status,
+    _LibraryField.rating,
+    _LibraryField.isbn,
+    _LibraryField.pages,
+    _LibraryField.publisher,
+    _LibraryField.languageCode,
+    _LibraryField.seriesId,
+    _LibraryField.volume,
+    _LibraryField.genreId,
+    _LibraryField.ageCategory,
+    _LibraryField.releaseDate,
+    _LibraryField.format,
+  ];
+  static const _defaultDesktopFields = [
+    _LibraryField.author,
+    _LibraryField.status,
+    _LibraryField.rating,
+    _LibraryField.isbn,
+    _LibraryField.pages,
+    _LibraryField.publisher,
+    _LibraryField.languageCode,
+    _LibraryField.seriesId,
+    _LibraryField.volume,
+    _LibraryField.genreId,
+    _LibraryField.ageCategory,
+    _LibraryField.releaseDate,
+    _LibraryField.format,
+  ];
+  static const _defaultMobileInfoFields = [
+    _LibraryField.author,
+    _LibraryField.status,
+    _LibraryField.rating,
+  ];
 
   List<Book> _books = const [];
   bool _isLoading = true;
   bool _isSaving = false;
   String? _errorMessage;
   int _selectedTabIndex = 1;
-  _BookSortField _sortField = _BookSortField.title;
+  _LibraryField _sortField = _LibraryField.title;
   bool _isSortAscending = true;
-  _BookFilterField _filterField = _BookFilterField.status;
+  _LibraryField _filterField = _LibraryField.status;
   String _filterValue = 'all';
-  List<_LibraryColumn> _columnOrder = const [
-    _LibraryColumn.author,
-    _LibraryColumn.status,
-    _LibraryColumn.rating,
-    _LibraryColumn.isbn,
-    _LibraryColumn.pages,
-    _LibraryColumn.publisher,
-    _LibraryColumn.languageCode,
-    _LibraryColumn.seriesId,
-    _LibraryColumn.volume,
-    _LibraryColumn.genreId,
-    _LibraryColumn.ageCategory,
-    _LibraryColumn.releaseDate,
-    _LibraryColumn.format,
-  ];
+  List<_LibraryField> _columnOrder = _defaultDesktopFields;
+  List<_LibraryField> _mobileInfoFields = _defaultMobileInfoFields;
   late final TextEditingController _searchController;
+  late final TextEditingController _pagesFilterMinController;
+  late final TextEditingController _pagesFilterMaxController;
   String _searchQuery = '';
+
+  List<_LibraryField> get _availableConfigurableFields => _configurableFields;
+
+  bool get _hasPagesRangeFilter {
+    return _pagesFilterMinController.text.trim().isNotEmpty ||
+        _pagesFilterMaxController.text.trim().isNotEmpty;
+  }
+
+  bool get _hasActiveFilter {
+    if (_filterField == _LibraryField.pages) {
+      return _hasPagesRangeFilter;
+    }
+    return _filterValue != 'all';
+  }
+
+  String get _activeFilterSummary {
+    final label = _fieldLabel(_filterField);
+    if (_filterField == _LibraryField.pages) {
+      final min = _pagesFilterMinController.text.trim();
+      final max = _pagesFilterMaxController.text.trim();
+      if (min.isNotEmpty && max.isNotEmpty) {
+        return '$label: $min-$max';
+      }
+      if (min.isNotEmpty) {
+        return '$label: from $min';
+      }
+      if (max.isNotEmpty) {
+        return '$label: up to $max';
+      }
+    }
+
+    return '$label: ${_formatFilterOptionLabel(_filterValue)}';
+  }
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _pagesFilterMinController = TextEditingController();
+    _pagesFilterMaxController = TextEditingController();
     _loadBooks();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _pagesFilterMinController.dispose();
+    _pagesFilterMaxController.dispose();
     super.dispose();
   }
 
@@ -114,7 +169,6 @@ class _BookPageState extends State<BookPage> {
 
     try {
       final books = await widget.repository.fetchBooks();
-
       if (!mounted) {
         return;
       }
@@ -155,30 +209,14 @@ class _BookPageState extends State<BookPage> {
       return;
     }
 
-    final title = submitted.title;
-    final author = submitted.author;
-    final status = submitted.status;
-    final rating = submitted.rating;
-    final isbn = submitted.isbn;
-    final pages = submitted.pages;
-    final publisher = submitted.publisher;
-    final languageCode = submitted.languageCode;
-    final coverUrl = submitted.coverUrl;
-    final seriesId = submitted.seriesId;
-    final volume = submitted.volume;
-    final genreId = submitted.genreId;
-    final ageCategory = submitted.ageCategory;
-    final releaseDate = submitted.releaseDate;
-    final format = submitted.format;
-
-    if (title.isEmpty) {
+    if (submitted.title.isEmpty) {
       setState(() {
         _errorMessage = 'Title must not be empty.';
       });
       return;
     }
 
-    if (author.isEmpty) {
+    if (submitted.author.isEmpty) {
       setState(() {
         _errorMessage = 'Author must not be empty.';
       });
@@ -192,21 +230,21 @@ class _BookPageState extends State<BookPage> {
 
     try {
       final savedBook = await widget.repository.createBook(
-        title: title,
-        author: author,
-        status: status,
-        rating: rating,
-        isbn: isbn,
-        pages: pages,
-        publisher: publisher,
-        languageCode: languageCode,
-        coverUrl: coverUrl,
-        seriesId: seriesId,
-        volume: volume,
-        genreId: genreId,
-        ageCategory: ageCategory,
-        releaseDate: releaseDate,
-        format: format,
+        title: submitted.title,
+        author: submitted.author,
+        status: submitted.status,
+        rating: submitted.rating,
+        isbn: submitted.isbn,
+        pages: submitted.pages,
+        publisher: submitted.publisher,
+        languageCode: submitted.languageCode,
+        coverUrl: submitted.coverUrl,
+        seriesId: submitted.seriesId,
+        volume: submitted.volume,
+        genreId: submitted.genreId,
+        ageCategory: submitted.ageCategory,
+        releaseDate: submitted.releaseDate,
+        format: submitted.format,
       );
 
       if (!mounted) {
@@ -233,30 +271,60 @@ class _BookPageState extends State<BookPage> {
     }
   }
 
+  int _compareBooksByField(Book left, Book right, _LibraryField field) {
+    switch (field) {
+      case _LibraryField.rating:
+        return (left.rating ?? -1).compareTo(right.rating ?? -1);
+      case _LibraryField.pages:
+        return (left.pages ?? -1).compareTo(right.pages ?? -1);
+      case _LibraryField.volume:
+        return (left.volume ?? -1).compareTo(right.volume ?? -1);
+      default:
+        return _fieldFilterValue(left, field).toLowerCase().compareTo(
+              _fieldFilterValue(right, field).toLowerCase(),
+            );
+    }
+  }
+
   List<Book> _sortBooks(List<Book> books) {
     final sortedBooks = [...books];
     sortedBooks.sort((left, right) {
-      final compare = switch (_sortField) {
-        _BookSortField.title =>
-          left.title.toLowerCase().compareTo(right.title.toLowerCase()),
-        _BookSortField.author =>
-          left.author.toLowerCase().compareTo(right.author.toLowerCase()),
-        _BookSortField.status =>
-          left.status.toLowerCase().compareTo(right.status.toLowerCase()),
-        _BookSortField.rating => (left.rating ?? -1).compareTo(right.rating ?? -1),
-      };
+      final compare = _compareBooksByField(left, right, _sortField);
       return _isSortAscending ? compare : -compare;
     });
     return sortedBooks;
   }
 
   List<Book> _filterBooks(List<Book> books) {
+    if (_filterField == _LibraryField.pages) {
+      final minPages = int.tryParse(_pagesFilterMinController.text.trim());
+      final maxPages = int.tryParse(_pagesFilterMaxController.text.trim());
+
+      if (minPages == null && maxPages == null) {
+        return books;
+      }
+
+      return books.where((book) {
+        final pages = book.pages;
+        if (pages == null) {
+          return false;
+        }
+        if (minPages != null && pages < minPages) {
+          return false;
+        }
+        if (maxPages != null && pages > maxPages) {
+          return false;
+        }
+        return true;
+      }).toList();
+    }
+
     if (_filterValue == 'all') {
       return books;
     }
 
     return books
-        .where((book) => _valueForFilterField(book, _filterField) == _filterValue)
+        .where((book) => _fieldFilterValue(book, _filterField) == _filterValue)
         .toList();
   }
 
@@ -267,33 +335,104 @@ class _BookPageState extends State<BookPage> {
     }
 
     return books.where((book) {
-      return book.title.toLowerCase().contains(query) ||
-          book.author.toLowerCase().contains(query) ||
-          book.status.toLowerCase().contains(query) ||
-          _formatRating(book.rating).toLowerCase().contains(query);
+      return _LibraryField.values.any(
+        (field) => _fieldSearchValue(book, field).contains(query),
+      );
     }).toList();
   }
 
-  String _valueForFilterField(Book book, _BookFilterField field) {
+  String _fieldLabel(_LibraryField field) {
     switch (field) {
-      case _BookFilterField.title:
-        return book.title;
-      case _BookFilterField.author:
-        return book.author;
-      case _BookFilterField.status:
-        return book.status;
-      case _BookFilterField.rating:
-        return _formatRating(book.rating);
+      case _LibraryField.title:
+        return 'Title';
+      case _LibraryField.author:
+        return 'Author';
+      case _LibraryField.status:
+        return 'Status';
+      case _LibraryField.rating:
+        return 'Rating';
+      case _LibraryField.isbn:
+        return 'ISBN';
+      case _LibraryField.pages:
+        return 'Pages';
+      case _LibraryField.publisher:
+        return 'Publisher';
+      case _LibraryField.languageCode:
+        return 'Language';
+      case _LibraryField.seriesId:
+        return 'Series';
+      case _LibraryField.volume:
+        return 'Volume';
+      case _LibraryField.genreId:
+        return 'Genre';
+      case _LibraryField.ageCategory:
+        return 'Age';
+      case _LibraryField.releaseDate:
+        return 'Release';
+      case _LibraryField.format:
+        return 'Format';
     }
   }
 
+  String _fieldFilterValue(Book book, _LibraryField field) {
+    switch (field) {
+      case _LibraryField.title:
+        return book.title;
+      case _LibraryField.author:
+        return book.author;
+      case _LibraryField.status:
+        return book.status;
+      case _LibraryField.rating:
+        return _formatRating(book.rating);
+      case _LibraryField.isbn:
+        return book.isbn ?? '-';
+      case _LibraryField.pages:
+        return book.pages?.toString() ?? '-';
+      case _LibraryField.publisher:
+        return book.publisher ?? '-';
+      case _LibraryField.languageCode:
+        return book.languageCode ?? '-';
+      case _LibraryField.seriesId:
+        return book.seriesId ?? '-';
+      case _LibraryField.volume:
+        return book.volume?.toString() ?? '-';
+      case _LibraryField.genreId:
+        return book.genreId ?? '-';
+      case _LibraryField.ageCategory:
+        return book.ageCategory ?? '-';
+      case _LibraryField.releaseDate:
+        return book.releaseDate ?? '-';
+      case _LibraryField.format:
+        return book.format ?? '-';
+    }
+  }
+
+  String _fieldDisplayValue(Book book, _LibraryField field) {
+    switch (field) {
+      case _LibraryField.status:
+        return _formatReadableLabel(book.status);
+      case _LibraryField.ageCategory:
+        return _formatReadableLabel(book.ageCategory);
+      case _LibraryField.format:
+        return _formatReadableLabel(book.format);
+      default:
+        return _fieldFilterValue(book, field);
+    }
+  }
+
+  String _fieldSearchValue(Book book, _LibraryField field) {
+    final raw = _fieldFilterValue(book, field).toLowerCase();
+    final display = _fieldDisplayValue(book, field).toLowerCase();
+    return raw == display ? raw : '$raw $display';
+  }
+
   List<String> _filterOptions() {
-    if (_filterField == _BookFilterField.status) {
+    if (_filterField == _LibraryField.status) {
       return _bookStatuses;
     }
 
     final values = _books
-        .map((book) => _valueForFilterField(book, _filterField))
+        .map((book) => _fieldFilterValue(book, _filterField))
         .toSet()
         .toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -301,46 +440,17 @@ class _BookPageState extends State<BookPage> {
     return values;
   }
 
-  List<DropdownMenuItem<_BookSortField>> _sortFieldItems() {
-    return const [
-      DropdownMenuItem(
-        value: _BookSortField.title,
-        child: Text('Title'),
-      ),
-      DropdownMenuItem(
-        value: _BookSortField.author,
-        child: Text('Author'),
-      ),
-      DropdownMenuItem(
-        value: _BookSortField.status,
-        child: Text('Status'),
-      ),
-      DropdownMenuItem(
-        value: _BookSortField.rating,
-        child: Text('Rating'),
-      ),
-    ];
-  }
-
-  List<DropdownMenuItem<_BookFilterField>> _filterFieldItems() {
-    return const [
-      DropdownMenuItem(
-        value: _BookFilterField.title,
-        child: Text('Title'),
-      ),
-      DropdownMenuItem(
-        value: _BookFilterField.author,
-        child: Text('Author'),
-      ),
-      DropdownMenuItem(
-        value: _BookFilterField.status,
-        child: Text('Status'),
-      ),
-      DropdownMenuItem(
-        value: _BookFilterField.rating,
-        child: Text('Rating'),
-      ),
-    ];
+  List<DropdownMenuItem<_LibraryField>> _buildFieldItems(
+    Iterable<_LibraryField> fields,
+  ) {
+    return fields
+        .map(
+          (field) => DropdownMenuItem<_LibraryField>(
+            value: field,
+            child: Text(_fieldLabel(field)),
+          ),
+        )
+        .toList();
   }
 
   String _formatRating(double? rating) {
@@ -348,70 +458,9 @@ class _BookPageState extends State<BookPage> {
       return 'No rating';
     }
 
-    final normalizedRating = rating % 1 == 0 ? rating.toInt().toString() : rating.toString();
+    final normalizedRating =
+        rating % 1 == 0 ? rating.toInt().toString() : rating.toString();
     return '$normalizedRating/5';
-  }
-
-  String _libraryColumnLabel(_LibraryColumn column) {
-    switch (column) {
-      case _LibraryColumn.author:
-        return 'Author';
-      case _LibraryColumn.status:
-        return 'Status';
-      case _LibraryColumn.rating:
-        return 'Rating';
-      case _LibraryColumn.isbn:
-        return 'ISBN';
-      case _LibraryColumn.pages:
-        return 'Pages';
-      case _LibraryColumn.publisher:
-        return 'Publisher';
-      case _LibraryColumn.languageCode:
-        return 'Language';
-      case _LibraryColumn.seriesId:
-        return 'Series';
-      case _LibraryColumn.volume:
-        return 'Volume';
-      case _LibraryColumn.genreId:
-        return 'Genre';
-      case _LibraryColumn.ageCategory:
-        return 'Age';
-      case _LibraryColumn.releaseDate:
-        return 'Release';
-      case _LibraryColumn.format:
-        return 'Format';
-    }
-  }
-
-  String _libraryColumnValue(Book book, _LibraryColumn column) {
-    switch (column) {
-      case _LibraryColumn.author:
-        return book.author;
-      case _LibraryColumn.status:
-        return book.status;
-      case _LibraryColumn.rating:
-        return _formatRating(book.rating);
-      case _LibraryColumn.isbn:
-        return book.isbn ?? '-';
-      case _LibraryColumn.pages:
-        return book.pages?.toString() ?? '-';
-      case _LibraryColumn.publisher:
-        return book.publisher ?? '-';
-      case _LibraryColumn.languageCode:
-        return book.languageCode ?? '-';
-      case _LibraryColumn.seriesId:
-        return book.seriesId ?? '-';
-      case _LibraryColumn.volume:
-        return book.volume?.toString() ?? '-';
-      case _LibraryColumn.genreId:
-        return book.genreId ?? '-';
-      case _LibraryColumn.ageCategory:
-        return book.ageCategory ?? '-';
-      case _LibraryColumn.releaseDate:
-        return book.releaseDate ?? '-';
-      case _LibraryColumn.format:
-        return book.format ?? '-';
-    }
   }
 
   int _columnFlexForValues(Iterable<String> values) {
@@ -434,34 +483,32 @@ class _BookPageState extends State<BookPage> {
 
   int _titleColumnFlex(List<Book> books) {
     final baseFlex = _columnFlexForValues([
-      'Title',
+      _fieldLabel(_LibraryField.title),
       ...books.map((book) => book.title),
     ]);
 
-    // Keep title readable, but cap it so the trailing columns stay visible.
     final reducedFlex = baseFlex > 1 ? baseFlex - 1 : 1;
     return reducedFlex > 2 ? 2 : reducedFlex;
   }
 
-  int _libraryColumnFlex(List<Book> books, _LibraryColumn column) {
+  int _libraryFieldFlex(List<Book> books, _LibraryField field) {
     final baseFlex = _columnFlexForValues([
-      _libraryColumnLabel(column),
-      ...books.map((book) => _libraryColumnValue(book, column)),
+      _fieldLabel(field),
+      ...books.map((book) => _fieldDisplayValue(book, field)),
     ]);
 
-    // Ensure configurable columns do not collapse too far.
     return baseFlex < 2 ? 2 : baseFlex;
   }
 
-  void _updateLibraryColumnAtIndex({
+  void _updateLibraryFieldAtIndex({
     required int index,
-    required _LibraryColumn column,
+    required _LibraryField field,
   }) {
     if (index < 0 || index >= _columnOrder.length) {
       return;
     }
 
-    final currentIndex = _columnOrder.indexOf(column);
+    final currentIndex = _columnOrder.indexOf(field);
     if (currentIndex == -1 || currentIndex == index) {
       return;
     }
@@ -469,21 +516,41 @@ class _BookPageState extends State<BookPage> {
     setState(() {
       final reordered = [..._columnOrder];
       final currentAtTarget = reordered[index];
-      reordered[index] = column;
+      reordered[index] = field;
       reordered[currentIndex] = currentAtTarget;
       _columnOrder = reordered;
     });
   }
 
-  List<PopupMenuEntry<_LibraryColumn>> _libraryColumnMenuItems(
-    _LibraryColumn selectedColumn,
+  void _toggleMobileInfoField(_LibraryField field, bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        if (_mobileInfoFields.contains(field) ||
+            _mobileInfoFields.length >= _maxMobileInfoColumns) {
+          return;
+        }
+        _mobileInfoFields = [..._mobileInfoFields, field];
+        return;
+      }
+
+      if (!_mobileInfoFields.contains(field) || _mobileInfoFields.length == 1) {
+        return;
+      }
+      _mobileInfoFields = _mobileInfoFields
+          .where((selectedField) => selectedField != field)
+          .toList();
+    });
+  }
+
+  List<PopupMenuEntry<_LibraryField>> _libraryFieldMenuItems(
+    _LibraryField selectedField,
   ) {
-    return _LibraryColumn.values
+    return _configurableFields
         .map(
-          (column) => CheckedPopupMenuItem<_LibraryColumn>(
-            value: column,
-            checked: column == selectedColumn,
-            child: Text(_libraryColumnLabel(column)),
+          (field) => CheckedPopupMenuItem<_LibraryField>(
+            value: field,
+            checked: field == selectedField,
+            child: Text(_fieldLabel(field)),
           ),
         )
         .toList();
@@ -493,10 +560,10 @@ class _BookPageState extends State<BookPage> {
     ThemeData theme, {
     required String label,
     required bool canChange,
-    _LibraryColumn? selectedColumn,
+    _LibraryField? selectedField,
     int? columnOrderIndex,
   }) {
-    if (!canChange || selectedColumn == null) {
+    if (!canChange || selectedField == null) {
       return Text(
         label,
         style: theme.textTheme.labelLarge,
@@ -505,23 +572,21 @@ class _BookPageState extends State<BookPage> {
       );
     }
 
-    return PopupMenuButton<_LibraryColumn>(
+    return PopupMenuButton<_LibraryField>(
       tooltip: 'Change column',
       onSelected: (value) {
-        _updateLibraryColumnAtIndex(
+        _updateLibraryFieldAtIndex(
           index: columnOrderIndex ?? 0,
-          column: value,
+          field: value,
         );
       },
-      itemBuilder: (_) => _libraryColumnMenuItems(selectedColumn),
+      itemBuilder: (_) => _libraryFieldMenuItems(selectedField),
       padding: EdgeInsets.zero,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.55,
-          ),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -542,40 +607,64 @@ class _BookPageState extends State<BookPage> {
   }
 
   String _formatFilterOptionLabel(String value) {
-    if (_filterField != _BookFilterField.status) {
-      return value;
+    switch (_filterField) {
+      case _LibraryField.status:
+        return value == '-' ? value : value[0].toUpperCase() + value.substring(1);
+      case _LibraryField.ageCategory:
+      case _LibraryField.format:
+        return _formatReadableLabel(value);
+      default:
+        return value;
     }
-    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  String _formatReadableLabel(String? value) {
+    if (value == null || value.isEmpty || value == '-') {
+      return '-';
+    }
+    return value
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
+
+  String _mobileInfoValue(Book book, _LibraryField field) {
+    return _fieldDisplayValue(book, field);
+  }
+
+  bool _shouldHideMobileInfoValue(_LibraryField field, String value) {
+    if (value == '-') {
+      return true;
+    }
+    if (field == _LibraryField.rating && value == 'No rating') {
+      return true;
+    }
+    return false;
   }
 
   void _resetSortAndFilter() {
     setState(() {
-      _filterField = _BookFilterField.status;
+      _filterField = _LibraryField.status;
       _filterValue = 'all';
-      _sortField = _BookSortField.title;
+      _pagesFilterMinController.clear();
+      _pagesFilterMaxController.clear();
+      _sortField = _LibraryField.title;
       _isSortAscending = true;
-      _columnOrder = const [
-        _LibraryColumn.author,
-        _LibraryColumn.status,
-        _LibraryColumn.rating,
-        _LibraryColumn.isbn,
-        _LibraryColumn.pages,
-        _LibraryColumn.publisher,
-        _LibraryColumn.languageCode,
-        _LibraryColumn.seriesId,
-        _LibraryColumn.volume,
-        _LibraryColumn.genreId,
-        _LibraryColumn.ageCategory,
-        _LibraryColumn.releaseDate,
-        _LibraryColumn.format,
-      ];
+      _columnOrder = _defaultDesktopFields;
+      _mobileInfoFields = _defaultMobileInfoFields;
     });
   }
 
-  Future<void> _openSortFilterSheet(ThemeData theme) async {
+  Future<void> _openSortFilterSheet(
+    ThemeData theme, {
+    required bool isMobile,
+    required _LibraryControlPanel panel,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, sheetSetState) {
@@ -583,97 +672,194 @@ class _BookPageState extends State<BookPage> {
               sheetSetState(() {});
             }
 
+            final showAllSections = !isMobile;
+            final showSortSection =
+                showAllSections || panel == _LibraryControlPanel.sort;
+            final showFilterSection =
+                showAllSections || panel == _LibraryControlPanel.filter;
+            final showDisplaySection =
+                isMobile && (showAllSections || panel == _LibraryControlPanel.display);
+
             return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  0,
+                  16,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sort by:', style: theme.textTheme.labelMedium),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<_BookSortField>(
-                            initialValue: _sortField,
-                            items: _sortFieldItems(),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
+                    if (showSortSection) ...[
+                      Text('Sort by:', style: theme.textTheme.labelMedium),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          FilledButton.tonal(
+                            onPressed: () {
                               setState(() {
-                                _sortField = value;
+                                _isSortAscending = !_isSortAscending;
                               });
                               refreshSheet();
                             },
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: AnimatedRotation(
+                              duration: const Duration(milliseconds: 180),
+                              turns: _isSortAscending ? 0 : 0.5,
+                              child: const Icon(Icons.arrow_upward),
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: DropdownButtonFormField<_LibraryField>(
+                              initialValue: _sortField,
+                              items: _buildFieldItems(_LibraryField.values),
+                              onChanged: (value) {
+                                if (value == null) {
+                                  return;
+                                }
+                                setState(() {
+                                  _sortField = value;
+                                });
+                                refreshSheet();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (showFilterSection) ...[
+                      if (showSortSection) const SizedBox(height: 16),
+                      Text('Filter by:', style: theme.textTheme.labelMedium),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<_LibraryField>(
+                        initialValue: _filterField,
+                        items: _buildFieldItems(_LibraryField.values),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _filterField = value;
+                            _filterValue = 'all';
+                            if (_filterField != _LibraryField.pages) {
+                              _pagesFilterMinController.clear();
+                              _pagesFilterMaxController.clear();
+                            }
+                          });
+                          refreshSheet();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      if (_filterField == _LibraryField.pages) ...[
+                        Text('Range:', style: theme.textTheme.labelMedium),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _pagesFilterMinController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Min pages',
+                                ),
+                                onChanged: (_) {
+                                  setState(() {});
+                                  refreshSheet();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _pagesFilterMaxController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Max pages',
+                                ),
+                                onChanged: (_) {
+                                  setState(() {});
+                                  refreshSheet();
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          onPressed: () {
+                      ] else ...[
+                        Text('Value:', style: theme.textTheme.labelMedium),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          initialValue: _filterValue,
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'all',
+                              child: Text('All'),
+                            ),
+                            ..._filterOptions().map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(_formatFilterOptionLabel(value)),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
                             setState(() {
-                              _isSortAscending = !_isSortAscending;
+                              _filterValue = value;
                             });
                             refreshSheet();
                           },
-                          tooltip: _isSortAscending
-                              ? 'Ascending'
-                              : 'Descending',
-                          icon: AnimatedRotation(
-                            duration: const Duration(milliseconds: 180),
-                            turns: _isSortAscending ? 0 : 0.5,
-                            child: const Icon(Icons.arrow_upward),
-                          ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Filter by:', style: theme.textTheme.labelMedium),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<_BookFilterField>(
-                      initialValue: _filterField,
-                      items: _filterFieldItems(),
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _filterField = value;
-                          _filterValue = 'all';
-                        });
-                        refreshSheet();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Value:', style: theme.textTheme.labelMedium),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: _filterValue,
-                      items: [
-                        const DropdownMenuItem(
-                          value: 'all',
-                          child: Text('All'),
+                    ],
+                    if (showDisplaySection) ...[
+                      if (showSortSection || showFilterSection)
+                        const SizedBox(height: 20),
+                      Text('Display:', style: theme.textTheme.labelMedium),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Choose up to 6 info fields for mobile cards.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        ..._filterOptions().map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(
-                              _formatFilterOptionLabel(value),
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _filterValue = value;
-                        });
-                        refreshSheet();
-                      },
-                    ),
+                      ),
+                      const SizedBox(height: 8),
+                      ..._configurableFields.map((field) {
+                        final isChecked = _mobileInfoFields.contains(field);
+                        final disableUnchecked =
+                            !isChecked &&
+                            _mobileInfoFields.length >= _maxMobileInfoColumns;
+                        return CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: isChecked,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_fieldLabel(field)),
+                          onChanged: disableUnchecked
+                              ? null
+                              : (value) {
+                                  if (value == null) {
+                                    return;
+                                  }
+                                  _toggleMobileInfoField(field, value);
+                                  refreshSheet();
+                                },
+                        );
+                      }),
+                    ],
                   ],
                 ),
               ),
@@ -701,9 +887,7 @@ class _BookPageState extends State<BookPage> {
 
     setState(() {
       if (result.isDeleted) {
-        _books = _books
-            .where((entry) => entry.id != result.deletedBookId)
-            .toList();
+        _books = _books.where((entry) => entry.id != result.deletedBookId).toList();
         return;
       }
 
@@ -722,9 +906,9 @@ class _BookPageState extends State<BookPage> {
     final isMobile = MediaQuery.sizeOf(context).width < 700;
     final tabIndex = _selectedTabIndex;
     final (title, content) = switch (tabIndex) {
-      0 => ('Home', this._buildStartTab(theme)),
-      1 => ('Library', this._buildLibraryTab(theme, books)),
-      _ => ('Statistics', this._buildStatisticsTab(theme)),
+      0 => ('Home', _buildStartTab(theme)),
+      1 => ('Library', _buildLibraryTab(theme, books)),
+      _ => ('Statistics', _buildStatisticsTab(theme)),
     };
 
     return Scaffold(
@@ -777,9 +961,7 @@ class _BookPageState extends State<BookPage> {
                   children: [
                     const Icon(Icons.palette_outlined, size: 18),
                     const SizedBox(width: 8),
-                    Text(
-                      'Schema: ${isDarkMode ? 'Dark' : 'Light'}',
-                    ),
+                    Text('Schema: ${isDarkMode ? 'Dark' : 'Light'}'),
                   ],
                 ),
               ),

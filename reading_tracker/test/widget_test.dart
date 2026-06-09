@@ -6,6 +6,22 @@ import 'package:reading_tracker/features/books/domain/repositories/book_reposito
 import 'package:reading_tracker/features/metadata/domain/models/book_enrichment.dart';
 
 void main() {
+  Future<void> pumpMobileApp(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('renders add button and book list', (WidgetTester tester) async {
     await tester.pumpWidget(
       MyApp(
@@ -63,6 +79,67 @@ void main() {
     expect(find.text('Statistics'), findsWidgets);
     expect(find.text('This page is empty.'), findsOneWidget);
     expect(find.text('Sort/Filter'), findsNothing);
+  });
+
+  testWidgets('shows mobile library cards instead of the table header', (
+    WidgetTester tester,
+  ) async {
+    await pumpMobileApp(tester);
+
+    expect(find.text('Sort'), findsOneWidget);
+    expect(find.text('Filter'), findsOneWidget);
+    expect(find.text('Display'), findsOneWidget);
+    expect(find.text('Cover'), findsNothing);
+    expect(find.text('Author'), findsNothing);
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Author A'), findsOneWidget);
+    expect(find.text('Reading'), findsOneWidget);
+  });
+
+  testWidgets('customizes mobile library info slots', (
+    WidgetTester tester,
+  ) async {
+    await pumpMobileApp(tester);
+
+    await tester.tap(find.text('Display'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Choose up to 6 info fields for mobile cards.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Author'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Pages'));
+    await tester.pumpAndSettle();
+
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pages: 321'), findsOneWidget);
+    expect(find.text('Author A'), findsNothing);
+  });
+
+  testWidgets('limits mobile display selection to six info fields', (
+    WidgetTester tester,
+  ) async {
+    await pumpMobileApp(tester);
+
+    await tester.tap(find.text('Display'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Pages'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Publisher'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Language'));
+    await tester.pumpAndSettle();
+
+    final isbnTile = tester.widget<CheckboxListTile>(
+      find.widgetWithText(CheckboxListTile, 'ISBN'),
+    );
+    expect(isbnTile.onChanged, isNull);
   });
 
   testWidgets('disables create until required fields are filled', (
@@ -236,15 +313,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sort/Filter'), findsOneWidget);
+    expect(find.text('Sort/Filter/Display'), findsOneWidget);
 
     final alphaBefore = tester.getTopLeft(find.text('Alpha Book')).dy;
     final secondBefore = tester.getTopLeft(find.text('Second Book')).dy;
     expect(alphaBefore < secondBefore, isTrue);
 
-    await tester.tap(find.text('Sort/Filter'));
+    await tester.tap(find.text('Sort/Filter/Display'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sort & filter'));
+    await tester.tap(find.text('Sort / Filter / Display'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await tester.pumpAndSettle();
@@ -266,14 +343,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sort/Filter'), findsOneWidget);
+    expect(find.text('Sort/Filter/Display'), findsOneWidget);
     expect(find.text('Alpha Book'), findsOneWidget);
     expect(find.text('Second Book'), findsOneWidget);
     expect(find.text('Read Book'), findsOneWidget);
 
-    await tester.tap(find.text('Sort/Filter'));
+    await tester.tap(find.text('Sort/Filter/Display'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sort & filter'));
+    await tester.tap(find.text('Sort / Filter / Display'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(DropdownButtonFormField).at(1));
@@ -291,6 +368,59 @@ void main() {
     expect(find.text('Alpha Book'), findsOneWidget);
     expect(find.text('Second Book'), findsNothing);
     expect(find.text('Read Book'), findsNothing);
+  });
+
+  testWidgets('filters library entries by pages range', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sort/Filter/Display'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sort / Filter / Display'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField).at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pages').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Min pages'), '300');
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Max pages'), '330');
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Second Book'), findsNothing);
+    expect(find.text('Read Book'), findsNothing);
+  });
+
+  testWidgets('shows active filter summary below mobile buttons', (
+    WidgetTester tester,
+  ) async {
+    await pumpMobileApp(tester);
+
+    await tester.tap(find.text('Filter'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pages').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Min pages'), '300');
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Filter active: Pages: from 300'), findsOneWidget);
   });
 
   testWidgets('searches library entries via text field', (
@@ -312,6 +442,24 @@ void main() {
 
     expect(find.text('Alpha Book'), findsNothing);
     expect(find.text('Second Book'), findsOneWidget);
+    expect(find.text('Read Book'), findsNothing);
+  });
+
+  testWidgets('searches library entries across extended fields', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, '321');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Book'), findsOneWidget);
+    expect(find.text('Second Book'), findsNothing);
     expect(find.text('Read Book'), findsNothing);
   });
 
@@ -337,9 +485,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rating'), findsOneWidget);
-    expect(find.text('4/5'), findsOneWidget);
-    expect(find.text('No rating'), findsOneWidget);
-    expect(find.text('5/5'), findsOneWidget);
+    expect(find.text('4/5'), findsNothing);
+    expect(find.text('No rating'), findsNothing);
+    expect(find.text('5/5'), findsNothing);
+    expect(find.byIcon(Icons.star), findsNWidgets(9));
+    expect(find.byIcon(Icons.star_border), findsNWidgets(6));
   });
 
   testWidgets(
@@ -420,6 +570,7 @@ class FakeBookRepository implements BookRepository {
         author: 'Author A',
         status: 'reading',
         rating: 4,
+        pages: 321,
       ),
       Book(
         id: 'book-2',

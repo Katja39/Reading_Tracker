@@ -56,10 +56,7 @@ extension _BookPageSections on _BookPageState {
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Home',
-                    style: theme.textTheme.headlineSmall,
-                  ),
+                  Text('Home', style: theme.textTheme.headlineSmall),
                 ],
               ),
             ),
@@ -71,17 +68,20 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
     final maxWidth = _responsiveContentWidth(context);
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
     final titleFlex = _titleColumnFlex(books);
-    final preferredColumns = [..._columnOrder];
-    final additionalColumns = _LibraryColumn.values
-        .where((column) => !preferredColumns.contains(column))
+    final preferredFields = [..._columnOrder];
+    final additionalFields = _availableConfigurableFields
+        .where((field) => !preferredFields.contains(field))
         .toList();
-    final orderedColumns = [...preferredColumns, ...additionalColumns];
-    final variableColumnCount = _maxVariableColumns(context)
-        .clamp(2, _LibraryColumn.values.length);
-    final visibleColumns = orderedColumns.take(variableColumnCount).toList();
-    final columnFlexes = visibleColumns
-        .map((column) => _libraryColumnFlex(books, column))
+    final orderedFields = [...preferredFields, ...additionalFields];
+    final visibleFieldCount = _maxVariableColumns(context).clamp(
+      2,
+      _availableConfigurableFields.length,
+    ) as int;
+    final visibleFields = orderedFields.take(visibleFieldCount).toList();
+    final fieldFlexes = visibleFields
+        .map((field) => _libraryFieldFlex(books, field))
         .toList();
 
     return Center(
@@ -93,22 +93,24 @@ extension _BookPageSections on _BookPageState {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildLibraryToolbar(theme),
-              const SizedBox(height: 4),
+              SizedBox(height: isMobile ? 10 : 4),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 16),
                 ErrorBanner(message: _errorMessage!),
               ],
-              const SizedBox(height: 24),
+              SizedBox(height: isMobile ? 10 : 24),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : _buildLibraryCard(
-                        theme,
-                        books,
-                        visibleColumns,
-                        titleFlex,
-                        columnFlexes,
-                      ),
+                    : isMobile
+                        ? _buildMobileLibraryCard(theme, books)
+                        : _buildLibraryCard(
+                            theme,
+                            books,
+                            visibleFields,
+                            titleFlex,
+                            fieldFlexes,
+                          ),
               ),
               const SizedBox(height: 16),
               _buildLibraryActions(),
@@ -120,34 +122,90 @@ extension _BookPageSections on _BookPageState {
   }
 
   Widget _buildLibraryToolbar(ThemeData theme) {
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
+
+    final searchField = TextField(
+      controller: _searchController,
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+        });
+      },
+      decoration: InputDecoration(
+        hintText: 'Search books',
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainerHighest,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          searchField,
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildMobileSortControl(theme),
+              _buildLibraryControlButton(
+                theme,
+                label: 'Filter',
+                icon: Icons.filter_list,
+                isHighlighted: _hasActiveFilter,
+                onPressed: () {
+                  _openSortFilterSheet(
+                    theme,
+                    isMobile: true,
+                    panel: _LibraryControlPanel.filter,
+                  );
+                },
+              ),
+              _buildLibraryControlButton(
+                theme,
+                label: 'Display',
+                icon: Icons.view_agenda_outlined,
+                onPressed: () {
+                  _openSortFilterSheet(
+                    theme,
+                    isMobile: true,
+                    panel: _LibraryControlPanel.display,
+                  );
+                },
+              ),
+              TextButton(
+                onPressed: _resetSortAndFilter,
+                child: const Text('Reset'),
+              ),
+            ],
+          ),
+          if (_hasActiveFilter) ...[
+            const SizedBox(height: 10),
+            _buildActiveFilterBanner(theme),
+          ],
+        ],
+      );
+    }
+
     return Row(
       children: [
-        Expanded(
-          child: TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: 'Search books',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ),
+        Expanded(child: searchField),
         const SizedBox(width: 8),
         PopupMenuButton<String>(
           tooltip: 'Sort and filter',
           onSelected: (value) {
             if (value == _BookPageState._menuActionSortFilter) {
-              _openSortFilterSheet(theme);
+              _openSortFilterSheet(
+                theme,
+                isMobile: false,
+                panel: _LibraryControlPanel.sort,
+              );
             } else if (value == _BookPageState._menuActionResetFilter) {
               _resetSortAndFilter();
             }
@@ -155,7 +213,7 @@ extension _BookPageSections on _BookPageState {
           itemBuilder: (_) => const [
             PopupMenuItem<String>(
               value: _BookPageState._menuActionSortFilter,
-              child: Text('Sort & filter'),
+              child: Text('Sort / Filter / Display'),
             ),
             PopupMenuItem<String>(
               value: _BookPageState._menuActionResetFilter,
@@ -163,10 +221,7 @@ extension _BookPageSections on _BookPageState {
             ),
           ],
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: theme.colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
@@ -181,7 +236,7 @@ extension _BookPageSections on _BookPageState {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Sort/Filter',
+                  'Sort/Filter/Display',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
@@ -194,12 +249,145 @@ extension _BookPageSections on _BookPageState {
     );
   }
 
+  Widget _buildMobileSortControl(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: _isSortAscending ? 'Ascending' : 'Descending',
+            onPressed: () {
+              setState(() {
+                _isSortAscending = !_isSortAscending;
+              });
+            },
+            icon: AnimatedRotation(
+              duration: const Duration(milliseconds: 180),
+              turns: _isSortAscending ? 0 : 0.5,
+              child: const Icon(Icons.arrow_upward),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 22,
+            color: theme.colorScheme.outlineVariant,
+          ),
+          InkWell(
+            borderRadius: const BorderRadius.horizontal(
+              right: Radius.circular(12),
+            ),
+            onTap: () {
+              _openSortFilterSheet(
+                theme,
+                isMobile: true,
+                panel: _LibraryControlPanel.sort,
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Text(
+                'Sort',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLibraryControlButton(
+    ThemeData theme, {
+    required String label,
+    required IconData icon,
+    bool isHighlighted = false,
+    required VoidCallback onPressed,
+  }) {
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        foregroundColor: isHighlighted
+            ? theme.colorScheme.onPrimaryContainer
+            : theme.colorScheme.onSecondaryContainer,
+        backgroundColor: isHighlighted
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.secondaryContainer,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveFilterBanner(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.filter_alt,
+            size: 18,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _activeFilterSummary,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLibraryCard(ThemeData theme, List<Book> books) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: books.isEmpty
+            ? Center(
+                child: Text(
+                  'No books available yet.',
+                  style: theme.textTheme.bodyLarge,
+                ),
+              )
+            : ListView.separated(
+                itemCount: books.length,
+                separatorBuilder: (_, _) => const Divider(height: 24),
+                itemBuilder: (context, index) {
+                  final entry = books[index];
+                  return _buildMobileLibraryRow(theme, entry);
+                },
+              ),
+      ),
+    );
+  }
+
   Widget _buildLibraryCard(
     ThemeData theme,
     List<Book> books,
-    List<_LibraryColumn> visibleColumns,
+    List<_LibraryField> visibleFields,
     int titleFlex,
-    List<int> columnFlexes,
+    List<int> fieldFlexes,
   ) {
     return Card(
       child: Padding(
@@ -216,9 +404,9 @@ extension _BookPageSections on _BookPageState {
                 children: [
                   _buildLibraryHeader(
                     theme,
-                    visibleColumns,
+                    visibleFields,
                     titleFlex,
-                    columnFlexes,
+                    fieldFlexes,
                   ),
                   const Divider(height: 24),
                   Expanded(
@@ -228,10 +416,11 @@ extension _BookPageSections on _BookPageState {
                       itemBuilder: (context, index) {
                         final entry = books[index];
                         return _buildLibraryRow(
+                          theme,
                           entry,
-                          visibleColumns,
+                          visibleFields,
                           titleFlex,
-                          columnFlexes,
+                          fieldFlexes,
                         );
                       },
                     ),
@@ -244,9 +433,9 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildLibraryHeader(
     ThemeData theme,
-    List<_LibraryColumn> visibleColumns,
+    List<_LibraryField> visibleFields,
     int titleFlex,
-    List<int> columnFlexes,
+    List<int> fieldFlexes,
   ) {
     final children = <Widget>[
       SizedBox(
@@ -263,54 +452,45 @@ extension _BookPageSections on _BookPageState {
         flex: titleFlex,
         child: _buildColumnHeader(
           theme,
-          label: 'Title',
+          label: _fieldLabel(_LibraryField.title),
           canChange: false,
         ),
       ),
     ];
 
-    for (var index = 0; index < visibleColumns.length; index++) {
-      final column = visibleColumns[index];
+    for (var index = 0; index < visibleFields.length; index++) {
+      final field = visibleFields[index];
       children.add(const SizedBox(width: 16));
       children.add(
         Expanded(
-          flex: columnFlexes[index],
+          flex: fieldFlexes[index],
           child: _buildColumnHeader(
             theme,
-            label: _libraryColumnLabel(column),
+            label: _fieldLabel(field),
             canChange: true,
-            selectedColumn: column,
+            selectedField: field,
             columnOrderIndex: index,
           ),
         ),
       );
     }
 
-    return Row(
-      children: children,
-    );
+    return Row(children: children);
   }
 
   Widget _buildLibraryRow(
+    ThemeData theme,
     Book entry,
-    List<_LibraryColumn> visibleColumns,
+    List<_LibraryField> visibleFields,
     int titleFlex,
-    List<int> columnFlexes,
+    List<int> fieldFlexes,
   ) {
     final children = <Widget>[
-      SizedBox(
+      _buildBookCover(
+        entry,
         width: 64,
         height: 92,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: entry.coverUrl != null && entry.coverUrl!.isNotEmpty
-              ? Image.network(
-                  entry.coverUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _buildCoverFallback(context),
-                )
-              : _buildCoverFallback(context),
-        ),
+        borderRadius: 6,
       ),
       const SizedBox(width: 12),
       Expanded(
@@ -323,15 +503,15 @@ extension _BookPageSections on _BookPageState {
       ),
     ];
 
-    for (var index = 0; index < visibleColumns.length; index++) {
+    for (var index = 0; index < visibleFields.length; index++) {
       children.add(const SizedBox(width: 16));
       children.add(
         Expanded(
-          flex: columnFlexes[index],
-          child: Text(
-            _libraryColumnValue(entry, visibleColumns[index]),
-            overflow: TextOverflow.ellipsis,
-            softWrap: false,
+          flex: fieldFlexes[index],
+          child: _buildLibraryFieldValueWidget(
+            theme,
+            entry,
+            visibleFields[index],
           ),
         ),
       );
@@ -341,13 +521,220 @@ extension _BookPageSections on _BookPageState {
       onTap: () => _openBookDetails(entry),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 14,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        child: Row(children: children),
+      ),
+    );
+  }
+
+  Widget _buildMobileLibraryRow(ThemeData theme, Book entry) {
+    final selectedInfos = _mobileInfoFields
+        .map((field) => (field, _mobileInfoValue(entry, field)))
+        .where((info) => !_shouldHideMobileInfoValue(info.$1, info.$2))
+        .toList();
+    final primaryInfo = selectedInfos.isEmpty ? null : selectedInfos.first;
+    final compactInfos = selectedInfos.skip(1).toList();
+
+    return InkWell(
+      onTap: () => _openBookDetails(entry),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
-          children: children,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildBookCover(
+              entry,
+              width: 68,
+              height: 96,
+              borderRadius: 8,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  if (primaryInfo != null) ...[
+                    const SizedBox(height: 6),
+                    _buildMobilePrimaryInfo(
+                      theme,
+                      entry,
+                      primaryInfo.$1,
+                      primaryInfo.$2,
+                    ),
+                  ],
+                  if (compactInfos.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: compactInfos
+                          .map(
+                            (info) => _buildMobileInfoChip(
+                              theme,
+                              book: entry,
+                              field: info.$1,
+                              value: info.$2,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMobileInfoChip(
+    ThemeData theme, {
+    required Book book,
+    required _LibraryField field,
+    required String value,
+  }) {
+    final isStatus = field == _LibraryField.status;
+    final isRating = field == _LibraryField.rating;
+    final label = _fieldLabel(field);
+    final chipText = isStatus ? value : '$label: $value';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isStatus
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: isRating
+          ? _buildRatingStars(
+              theme,
+              book.rating,
+              size: 14,
+              activeColor: theme.colorScheme.onSurfaceVariant,
+              inactiveColor: theme.colorScheme.onSurfaceVariant,
+            )
+          : Text(
+              chipText,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: isStatus
+                    ? theme.colorScheme.onPrimaryContainer
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildLibraryFieldValueWidget(
+    ThemeData theme,
+    Book entry,
+    _LibraryField field,
+  ) {
+    if (field == _LibraryField.rating) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: _buildRatingStars(
+          theme,
+          entry.rating,
+          size: 16,
+        ),
+      );
+    }
+
+    return Text(
+      _fieldDisplayValue(entry, field),
+      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+    );
+  }
+
+  Widget _buildMobilePrimaryInfo(
+    ThemeData theme,
+    Book entry,
+    _LibraryField field,
+    String value,
+  ) {
+    if (field == _LibraryField.rating) {
+      return _buildRatingStars(
+        theme,
+        entry.rating,
+        size: 16,
+        activeColor: theme.colorScheme.primary,
+        inactiveColor: theme.colorScheme.outline,
+      );
+    }
+
+    return Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _buildRatingStars(
+    ThemeData theme,
+    double? rating, {
+    required double size,
+    Color? activeColor,
+    Color? inactiveColor,
+  }) {
+    final effectiveRating = (rating ?? 0).clamp(0, 5);
+    final fullStars = effectiveRating.floor();
+    final hasHalfStar = effectiveRating - fullStars >= 0.5;
+    final filledColor = activeColor ?? theme.colorScheme.primary;
+    final outlinedColor = inactiveColor ?? theme.colorScheme.outline;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        final icon = switch (index) {
+          _ when index < fullStars => Icons.star,
+          _ when index == fullStars && hasHalfStar => Icons.star_half,
+          _ => Icons.star_border,
+        };
+
+        final color = icon == Icons.star || icon == Icons.star_half
+            ? filledColor
+            : outlinedColor;
+
+        return Icon(
+          icon,
+          size: size,
+          color: color,
+        );
+      }),
+    );
+  }
+
+  Widget _buildBookCover(
+    Book entry, {
+    required double width,
+    required double height,
+    required double borderRadius,
+  }) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: entry.coverUrl != null && entry.coverUrl!.isNotEmpty
+            ? Image.network(
+                entry.coverUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _buildCoverFallback(context),
+              )
+            : _buildCoverFallback(context),
       ),
     );
   }
