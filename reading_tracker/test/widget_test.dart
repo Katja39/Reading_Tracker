@@ -29,6 +29,69 @@ void main() {
     expect(find.text('unread'), findsOneWidget);
   });
 
+  testWidgets('switches to home tab and shows home card', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home'), findsWidgets);
+    expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    expect(find.text('New Book'), findsNothing);
+  });
+
+  testWidgets('switches to statistics tab and shows placeholder', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Statistics'), findsWidgets);
+    expect(find.text('This page is empty.'), findsOneWidget);
+    expect(find.text('Sort/Filter'), findsNothing);
+  });
+
+  testWidgets('disables create until required fields are filled', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        repository: FakeBookRepository(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New Book'));
+    await tester.pumpAndSettle();
+
+    FilledButton createButton() =>
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Create'));
+
+    expect(createButton().onPressed, isNull);
+
+    await tester.enterText(find.byType(TextField).at(0), 'New Title');
+    await tester.pumpAndSettle();
+    expect(createButton().onPressed, isNull);
+
+    await tester.enterText(find.byType(TextField).at(1), 'New Author');
+    await tester.pumpAndSettle();
+    expect(createButton().onPressed, isNotNull);
+  });
+
   testWidgets('opens detail page when tapping a book', (
     WidgetTester tester,
   ) async {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../books/domain/models/book.dart';
 import '../../../books/domain/repositories/book_repository.dart';
 import '../../../books/presentation/pages/book_detail_page.dart';
+import '../../../books/presentation/widgets/book_form_dialog.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
 part 'book_page_dialog.dart';
@@ -139,7 +140,7 @@ class _BookPageState extends State<BookPage> {
   }
 
   Future<void> _showAddBookDialog() async {
-    final submitted = await showDialog<_AddBookDialogResult>(
+    final submitted = await showDialog<BookFormResult>(
       context: context,
       builder: (context) {
         return _AddBookDialog(

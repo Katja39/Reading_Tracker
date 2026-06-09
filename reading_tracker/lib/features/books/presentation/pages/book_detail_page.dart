@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/book.dart';
 import '../../domain/repositories/book_repository.dart';
+import '../widgets/book_form_dialog.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
 part 'book_detail_dialogs.dart';
@@ -52,7 +53,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Future<void> _showEditDialog() async {
-    final submitted = await showDialog<_EditBookDialogResult>(
+    final submitted = await showDialog<BookFormResult>(
       context: context,
       builder: (context) {
         return _EditBookDialog(
