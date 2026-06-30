@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+//https://developer.android.com/design/ui/mobile/guides/styles/color?hl=de
 
 class AppTheme {
   AppTheme._();
@@ -8,20 +9,22 @@ class AppTheme {
 
   static ThemeData _buildLightTheme() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF8D6C3F),
+      seedColor: const Color(0xFFFFF8EC),
       brightness: Brightness.light,
     ).copyWith(
-      primary: const Color(0xFF7A5C35),
+      primary: const Color(0xFF2F4858),
       onPrimary: const Color(0xFFFFF8EC),
-      secondary: const Color(0xFF9D7240),
+      primaryContainer: const Color(0xFF7798AB),
+      onPrimaryContainer: const Color(0xFFFFF8EC),
+      secondary: const Color(0xFF2F4858),
       onSecondary: const Color(0xFF2F1E08),
-      surface: const Color(0xFFFAF5EA),
+      surface: const Color(0xFFFFF8EC),
       onSurface: const Color(0xFF231E17),
       error: const Color(0xFFB3261E),
       onError: const Color(0xFFFFFFFF),
       errorContainer: const Color(0xFFF9DEDC),
       onErrorContainer: const Color(0xFF410E0B),
-      outline: const Color(0xFF7B7062),
+      outline: const Color.fromARGB(255, 128, 79, 16),
       outlineVariant: const Color(0xFFD8CFC0),
     );
 
@@ -29,7 +32,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF1E9DB),
+      scaffoldBackgroundColor: const Color(0xFFFFF8EC),
       visualDensity: VisualDensity.standard,
     );
 
@@ -132,28 +135,32 @@ class AppTheme {
 
   static ThemeData _buildDarkTheme() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF8A6A42),
+      seedColor: const Color(0xFF7798AB),
       brightness: Brightness.dark,
     ).copyWith(
-      primary: const Color(0xFFD2B27D),
-      onPrimary: const Color(0xFF34220B),
-      secondary: const Color(0xFFC69A66),
-      onSecondary: const Color(0xFF2E1B07),
-      surface: const Color(0xFF1B1A17),
-      onSurface: const Color(0xFFE8DDD0),
+      primary: const Color(0xFFA9C7D8),
+      onPrimary: const Color(0xFF102631),
+      primaryContainer: const Color(0xFF2F4858),
+      onPrimaryContainer: const Color(0xFFFFF8EC),
+      secondary: const Color(0xFFA9C7D8),
+      onSecondary: const Color(0xFF102631),
+      secondaryContainer: const Color(0xFF2F4858),
+      onSecondaryContainer: const Color(0xFFFFF8EC),
+      surface: const Color(0xFF111B22),
+      onSurface: const Color(0xFFF4EDE2),
       error: const Color(0xFFFFB4AB),
       onError: const Color(0xFF690005),
       errorContainer: const Color(0xFF5D1715),
       onErrorContainer: const Color(0xFFFFDAD6),
-      outline: const Color(0xFF8A7560),
-      outlineVariant: const Color(0xFF45382C),
+      outline: const Color(0xFFFFF8EC),
+      outlineVariant: const Color(0xFF3B4E58),
     );
 
     final baseTheme = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF141518),
+      scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
       visualDensity: VisualDensity.standard,
     );
 
@@ -163,14 +170,14 @@ class AppTheme {
         displayColor: scheme.onSurface,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF1A1B1F),
+        backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF211A13),
+        color: const Color(0xFF17232B),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -186,7 +193,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF251E16),
+        fillColor: const Color(0xFF1D2B34),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
@@ -227,8 +234,8 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF1A1B1F),
-        indicatorColor: scheme.primary.withOpacity(0.2),
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.primaryContainer,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return IconThemeData(color: scheme.primary);
@@ -246,7 +253,7 @@ class AppTheme {
         }),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFF211A13),
+        backgroundColor: const Color(0xFF17232B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -254,3 +261,9 @@ class AppTheme {
     );
   }
 }
+
+
+
+
+
+

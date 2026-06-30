@@ -55,7 +55,7 @@ extension _BookPageSections on _BookPageState {
                     size: 48,
                     color: theme.colorScheme.primary,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Text('Home', style: theme.textTheme.headlineSmall),
                 ],
               ),
@@ -88,17 +88,17 @@ extension _BookPageSections on _BookPageState {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildLibraryToolbar(theme),
-              SizedBox(height: isMobile ? 10 : 4),
+              SizedBox(height: isMobile ? 8 : 4),
               if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 ErrorBanner(message: _errorMessage!),
               ],
-              SizedBox(height: isMobile ? 10 : 24),
+              SizedBox(height: isMobile ? 8 : 12),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -112,7 +112,7 @@ extension _BookPageSections on _BookPageState {
                             fieldFlexes,
                           ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               _buildLibraryActions(),
             ],
           ),
@@ -148,7 +148,7 @@ extension _BookPageSections on _BookPageState {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           searchField,
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -181,12 +181,17 @@ extension _BookPageSections on _BookPageState {
               ),
               TextButton(
                 onPressed: _resetSortAndFilter,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: const Text('Reset'),
               ),
             ],
           ),
           if (_hasActiveFilter) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _buildActiveFilterBanner(theme),
           ],
         ],
@@ -221,7 +226,7 @@ extension _BookPageSections on _BookPageState {
             ),
           ],
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: theme.colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
@@ -250,58 +255,71 @@ extension _BookPageSections on _BookPageState {
   }
 
   Widget _buildMobileSortControl(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            tooltip: _isSortAscending ? 'Ascending' : 'Descending',
-            onPressed: () {
-              setState(() {
-                _isSortAscending = !_isSortAscending;
-              });
-            },
-            icon: AnimatedRotation(
-              duration: const Duration(milliseconds: 180),
-              turns: _isSortAscending ? 0 : 0.5,
-              child: const Icon(Icons.arrow_upward),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 22,
-            color: theme.colorScheme.outlineVariant,
-          ),
-          InkWell(
-            borderRadius: const BorderRadius.horizontal(
-              right: Radius.circular(12),
-            ),
-            onTap: () {
-              _openSortFilterSheet(
-                theme,
-                isMobile: true,
-                panel: _LibraryControlPanel.sort,
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Text(
-                'Sort',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
+    return SizedBox(
+      height: 36,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: _isSortAscending ? 'Ascending' : 'Descending',
+              iconSize: 18,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 36),
+              onPressed: () {
+                setState(() {
+                  _isSortAscending = !_isSortAscending;
+                });
+              },
+              icon: AnimatedRotation(
+                duration: const Duration(milliseconds: 180),
+                turns: _isSortAscending ? 0 : 0.5,
+                child: Icon(
+                  Icons.arrow_upward,
+                  color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
             ),
-          ),
-        ],
+            Container(
+              width: 1,
+              height: 18,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            InkWell(
+              borderRadius: const BorderRadius.horizontal(
+                right: Radius.circular(12),
+              ),
+              onTap: () {
+                _openSortFilterSheet(
+                  theme,
+                  isMobile: true,
+                  panel: _LibraryControlPanel.sort,
+                );
+              },
+              child: SizedBox(
+                height: 36,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Center(
+                    child: Text(
+                      'Sort',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-
   Widget _buildLibraryControlButton(
     ThemeData theme, {
     required String label,
@@ -311,16 +329,18 @@ extension _BookPageSections on _BookPageState {
   }) {
     return FilledButton.tonalIcon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: 16),
       label: Text(label),
       style: FilledButton.styleFrom(
         foregroundColor: isHighlighted
-            ? theme.colorScheme.onPrimaryContainer
-            : theme.colorScheme.onSecondaryContainer,
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onPrimaryContainer,
         backgroundColor: isHighlighted
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.secondaryContainer,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ? theme.colorScheme.primary
+            : theme.colorScheme.primaryContainer,
+        minimumSize: const Size(0, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -330,7 +350,7 @@ extension _BookPageSections on _BookPageState {
 
   Widget _buildActiveFilterBanner(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(12),
@@ -360,28 +380,25 @@ extension _BookPageSections on _BookPageState {
   }
 
   Widget _buildMobileLibraryCard(ThemeData theme, List<Book> books) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: books.isEmpty
-            ? Center(
-                child: Text(
-                  'No books available yet.',
-                  style: theme.textTheme.bodyLarge,
-                ),
-              )
-            : ListView.separated(
-                itemCount: books.length,
-                separatorBuilder: (_, _) => const Divider(height: 24),
-                itemBuilder: (context, index) {
-                  final entry = books[index];
-                  return _buildMobileLibraryRow(theme, entry);
-                },
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: books.isEmpty
+          ? Center(
+              child: Text(
+                'No books available yet.',
+                style: theme.textTheme.bodyLarge,
               ),
-      ),
+            )
+          : ListView.separated(
+              itemCount: books.length,
+              separatorBuilder: (_, _) => const Divider(height: 16),
+              itemBuilder: (context, index) {
+                final entry = books[index];
+                return _buildMobileLibraryRow(theme, entry);
+              },
+            ),
     );
   }
-
   Widget _buildLibraryCard(
     ThemeData theme,
     List<Book> books,
@@ -389,48 +406,45 @@ extension _BookPageSections on _BookPageState {
     int titleFlex,
     List<int> fieldFlexes,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: books.isEmpty
-            ? Center(
-                child: Text(
-                  'No books available yet.',
-                  style: theme.textTheme.bodyLarge,
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildLibraryHeader(
-                    theme,
-                    visibleFields,
-                    titleFlex,
-                    fieldFlexes,
-                  ),
-                  const Divider(height: 24),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: books.length,
-                      separatorBuilder: (_, _) => const Divider(height: 24),
-                      itemBuilder: (context, index) {
-                        final entry = books[index];
-                        return _buildLibraryRow(
-                          theme,
-                          entry,
-                          visibleFields,
-                          titleFlex,
-                          fieldFlexes,
-                        );
-                      },
-                    ),
-                  ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: books.isEmpty
+          ? Center(
+              child: Text(
+                'No books available yet.',
+                style: theme.textTheme.bodyLarge,
               ),
-      ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildLibraryHeader(
+                  theme,
+                  visibleFields,
+                  titleFlex,
+                  fieldFlexes,
+                ),
+                const Divider(height: 16),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: books.length,
+                    separatorBuilder: (_, _) => const Divider(height: 16),
+                    itemBuilder: (context, index) {
+                      final entry = books[index];
+                      return _buildLibraryRow(
+                        theme,
+                        entry,
+                        visibleFields,
+                        titleFlex,
+                        fieldFlexes,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
     );
   }
-
   Widget _buildLibraryHeader(
     ThemeData theme,
     List<_LibraryField> visibleFields,
@@ -521,7 +535,7 @@ extension _BookPageSections on _BookPageState {
       onTap: () => _openBookDetails(entry),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(children: children),
       ),
     );
@@ -570,7 +584,7 @@ extension _BookPageSections on _BookPageState {
                     ),
                   ],
                   if (compactInfos.isNotEmpty) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -779,3 +793,14 @@ extension _BookPageSections on _BookPageState {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+

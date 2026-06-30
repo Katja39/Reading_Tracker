@@ -705,6 +705,8 @@ class _BookPageState extends State<BookPage> {
                               refreshSheet();
                             },
                             style: FilledButton.styleFrom(
+                              foregroundColor: theme.colorScheme.onPrimaryContainer,
+                              backgroundColor: theme.colorScheme.primaryContainer,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 14,
@@ -1037,3 +1039,8 @@ class _TopNavButton extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
