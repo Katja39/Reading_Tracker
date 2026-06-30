@@ -334,6 +334,19 @@ class _BookDetailPageState extends State<BookDetailPage> {
         .join(' ');
   }
 
+  bool get _hasSeries {
+    return _book.seriesId != null && _book.seriesId!.isNotEmpty;
+  }
+
+  String get _seriesDisplayValue {
+    if (!_hasSeries) {
+      return '';
+    }
+    if (_book.volume == null) {
+      return _book.seriesId!;
+    }
+    return '${_book.seriesId!} · Vol. ${_book.volume}';
+  }
   double _responsiveContentWidth(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
@@ -391,80 +404,116 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_book.title, style: theme.textTheme.headlineSmall),
-                      if (_book.coverUrl != null &&
-                          _book.coverUrl!.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              _book.coverUrl!,
-                              height: 180,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) =>
-                                  const SizedBox.shrink(),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_book.coverUrl != null &&
+                                _book.coverUrl!.isNotEmpty) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  _book.coverUrl!,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const SizedBox.shrink(),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+                            Text(
+                              _book.title,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.headlineSmall,
                             ),
+                            if (_hasSeries) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                _seriesDisplayValue,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Text(
+                              'by ${_book.author}',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                            const SizedBox(height: 10),
+                            _BookHeaderRating(
+                              rating: _book.rating,
+                              onTap: _isSaving || _book.status != 'read'
+                                  ? null
+                                  : _showEditRatingDialog,
+                            ),
+                            const SizedBox(height: 10),
+                            _BookStatusButton(status: _book.status),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Divider(height: 1),
+                      const SizedBox(height: 20),
+                      _BookDetailSection(
+                        title: 'Book info',
+                        children: [
+                          _BookDetailRow(
+                            label: 'Genre',
+                            value: _book.genreId ?? '-',
                           ),
+                          _BookDetailRow(
+                            label: 'Age category',
+                            value: _formatReadableLabel(_book.ageCategory),
+                          ),
+                          _BookDetailRow(
+                            label: 'Format',
+                            value: _formatReadableLabel(_book.format),
+                          ),
+                          _BookDetailRow(
+                            label: 'Pages',
+                            value: _book.pages?.toString() ?? '-',
+                          ),
+                        ],
+                      ),
+                      if (_hasSeries) ...[
+                        const SizedBox(height: 20),
+                        _BookDetailSection(
+                          title: 'Series',
+                          children: [
+                            _BookDetailRow(
+                              label: 'Series',
+                              value: _book.seriesId!,
+                            ),
+                            if (_book.volume != null)
+                              _BookDetailRow(
+                                label: 'Volume',
+                                value: _book.volume.toString(),
+                              ),
+                          ],
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      _BookDetailRow(label: 'Author', value: _book.author),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(label: 'Status', value: _book.status),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(label: 'ISBN', value: _book.isbn ?? '-'),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Pages',
-                        value: _book.pages?.toString() ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Publisher',
-                        value: _book.publisher ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Language',
-                        value: _book.languageCode ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Series ID',
-                        value: _book.seriesId ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Volume',
-                        value: _book.volume?.toString() ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Genre ID',
-                        value: _book.genreId ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Age category',
-                        value: _formatReadableLabel(_book.ageCategory),
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Release date',
-                        value: _book.releaseDate ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookDetailRow(
-                        label: 'Format',
-                        value: _book.format ?? '-',
-                      ),
-                      const SizedBox(height: 12),
-                      _BookRatingRow(
-                        rating: _book.rating,
-                        onTap: _isSaving || _book.status != 'read'
-                            ? null
-                            : _showEditRatingDialog,
+                      const SizedBox(height: 20),
+                      _BookDetailSection(
+                        title: 'Publication',
+                        children: [
+                          _BookDetailRow(label: 'ISBN', value: _book.isbn ?? '-'),
+                          _BookDetailRow(
+                            label: 'Publisher',
+                            value: _book.publisher ?? '-',
+                          ),
+                          _BookDetailRow(
+                            label: 'Language',
+                            value: _book.languageCode ?? '-',
+                          ),
+                          _BookDetailRow(
+                            label: 'Release date',
+                            value: _book.releaseDate ?? '-',
+                          ),
+                        ],
                       ),
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 20),
@@ -481,3 +530,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 }
+
+
+
+
+
+
+

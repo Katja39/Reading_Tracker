@@ -21,8 +21,39 @@ class _BookDetailRow extends StatelessWidget {
   }
 }
 
-class _BookRatingRow extends StatelessWidget {
-  const _BookRatingRow({required this.rating, required this.onTap});
+class _BookDetailSection extends StatelessWidget {
+  const _BookDetailSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...children.expand(
+          (child) => [
+            child,
+            const SizedBox(height: 12),
+          ],
+        ).take(children.length * 2 - 1),
+      ],
+    );
+  }
+}
+
+class _BookHeaderRating extends StatelessWidget {
+  const _BookHeaderRating({required this.rating, required this.onTap});
 
   final double? rating;
   final VoidCallback? onTap;
@@ -38,30 +69,49 @@ class _BookRatingRow extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Rating', style: theme.textTheme.labelLarge),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                ...List.generate(5, (index) {
-                  final icon = switch (index) {
-                    _ when index < fullStars => Icons.star,
-                    _ when index == fullStars && hasHalfStar => Icons.star_half,
-                    _ => Icons.star_border,
-                  };
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            final icon = switch (index) {
+              _ when index < fullStars => Icons.star,
+              _ when index == fullStars && hasHalfStar => Icons.star_half,
+              _ => Icons.star_border,
+            };
 
-                  return Icon(icon, color: theme.colorScheme.primary);
-                }),
-                const SizedBox(width: 8),
-                Text('Tap to edit', style: theme.textTheme.bodySmall),
-              ],
-            ),
-          ],
+            return Icon(icon, color: theme.colorScheme.primary, size: 22);
+          }),
         ),
       ),
     );
   }
 }
+
+
+class _BookStatusButton extends StatelessWidget {
+  const _BookStatusButton({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FilledButton.tonal(
+      onPressed: () {},
+      style: FilledButton.styleFrom(
+        foregroundColor: theme.colorScheme.onPrimaryContainer,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        minimumSize: const Size(0, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Text(status),
+    );
+  }
+}
+
+
