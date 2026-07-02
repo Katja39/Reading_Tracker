@@ -17,6 +17,9 @@ class CreateBookRequest(BaseModel):
     age_category: str | None = Field(default=None, max_length=50)
     release_date: str | None = Field(default=None, max_length=10)
     format: str | None = Field(default=None, max_length=50)
+    description: str | None = Field(default=None, max_length=10000)
+    reading_start_date: str | None = Field(default=None, max_length=10)
+    reading_end_date: str | None = Field(default=None, max_length=10)
 
 
 class UpdateBookRequest(BaseModel):
@@ -35,6 +38,9 @@ class UpdateBookRequest(BaseModel):
     age_category: str | None = Field(default=None, max_length=50)
     release_date: str | None = Field(default=None, max_length=10)
     format: str | None = Field(default=None, max_length=50)
+    description: str | None = Field(default=None, max_length=10000)
+    reading_start_date: str | None = Field(default=None, max_length=10)
+    reading_end_date: str | None = Field(default=None, max_length=10)
 
 
 class BookResponse(BaseModel):
@@ -55,4 +61,10 @@ class BookResponse(BaseModel):
     age_category: str | None
     release_date: str | None
     format: str | None
+    description: str | None
+    reading_start_date: str | None
+    reading_end_date: str | None
+    created_at: str | None
+    updated_at: str | None
+
 

@@ -17,6 +17,11 @@ class Book {
     this.ageCategory,
     this.releaseDate,
     this.format,
+    this.description,
+    this.readingStartDate,
+    this.readingEndDate,
+    this.createdAt,
+    this.updatedAt,
   });
 
   final String id;
@@ -36,6 +41,11 @@ class Book {
   final String? ageCategory;
   final String? releaseDate;
   final String? format;
+  final String? description;
+  final String? readingStartDate;
+  final String? readingEndDate;
+  final String? createdAt;
+  final String? updatedAt;
 
   factory Book.fromJson(Map<String, dynamic> json) {
     final ratingValue = json['rating'];
@@ -59,6 +69,12 @@ class Book {
       ageCategory: json['age_category'] as String?,
       releaseDate: json['release_date'] as String?,
       format: json['format'] as String?,
+      description: json['description'] as String?,
+      readingStartDate: json['reading_start_date'] as String?,
+      readingEndDate: json['reading_end_date'] as String?,
+      createdAt: json['created_at'] as String?,
+      updatedAt: json['updated_at'] as String?,
     );
   }
 }
+

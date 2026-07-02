@@ -82,6 +82,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final ageCategory = submitted.ageCategory;
     final releaseDate = submitted.releaseDate;
     final format = submitted.format;
+    final description = submitted.description;
     final ratingForStatus = status == 'read' ? _book.rating : null;
     final shouldPromptForRating =
         _book.status != 'read' && status == 'read' && ratingForStatus == null;
@@ -123,6 +124,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
       ageCategory: ageCategory,
       releaseDate: releaseDate,
       format: format,
+      description: description,
+      readingStartDate: _book.readingStartDate,
+      readingEndDate: _book.readingEndDate,
+      createdAt: _book.createdAt,
+      updatedAt: _book.updatedAt,
     );
     var openRatingDialogAfterSave = false;
 
@@ -145,6 +151,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
         ageCategory: ageCategory,
         releaseDate: releaseDate,
         format: format,
+        description: description,
+        readingStartDate: _book.readingStartDate,
+        readingEndDate: _book.readingEndDate,
       );
 
       if (!mounted) {
@@ -190,7 +199,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
     final rating = submitted.rating;
 
-    if (rating == _book.rating) {
+    final updatedStatus = rating == null ? _book.status : 'read';
+
+    if (rating == _book.rating && updatedStatus == _book.status) {
       return;
     }
 
@@ -204,7 +215,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       userId: _book.userId,
       title: _book.title,
       author: _book.author,
-      status: _book.status,
+      status: updatedStatus,
       rating: rating,
       isbn: _book.isbn,
       pages: _book.pages,
@@ -217,6 +228,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
       ageCategory: _book.ageCategory,
       releaseDate: _book.releaseDate,
       format: _book.format,
+      description: _book.description,
+      readingStartDate: _book.readingStartDate,
+      readingEndDate: _book.readingEndDate,
+      createdAt: _book.createdAt,
+      updatedAt: _book.updatedAt,
     );
 
     try {
@@ -225,7 +241,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         userId: _book.userId,
         title: _book.title,
         author: _book.author,
-        status: _book.status,
+        status: updatedStatus,
         rating: rating,
         isbn: _book.isbn,
         pages: _book.pages,
@@ -238,6 +254,137 @@ class _BookDetailPageState extends State<BookDetailPage> {
         ageCategory: _book.ageCategory,
         releaseDate: _book.releaseDate,
         format: _book.format,
+        description: _book.description,
+        readingStartDate: _book.readingStartDate,
+        readingEndDate: _book.readingEndDate,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _book = localUpdatedBook;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showEditStatusDialog() async {
+    var selectedStatus = _book.status;
+    final submitted = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Edit Status'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: widget.statuses.map((status) {
+                  return RadioListTile<String>(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_formatReadableLabel(status)),
+                    value: status,
+                    groupValue: selectedStatus,
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        selectedStatus = value;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(selectedStatus),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (submitted == null || submitted == _book.status) {
+      return;
+    }
+
+    final updatedRating = submitted == 'read' ? _book.rating : null;
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final localUpdatedBook = Book(
+      id: _book.id,
+      userId: _book.userId,
+      title: _book.title,
+      author: _book.author,
+      status: submitted,
+      rating: updatedRating,
+      isbn: _book.isbn,
+      pages: _book.pages,
+      publisher: _book.publisher,
+      languageCode: _book.languageCode,
+      coverUrl: _book.coverUrl,
+      seriesId: _book.seriesId,
+      volume: _book.volume,
+      genreId: _book.genreId,
+      ageCategory: _book.ageCategory,
+      releaseDate: _book.releaseDate,
+      format: _book.format,
+      description: _book.description,
+      readingStartDate: _book.readingStartDate,
+      readingEndDate: _book.readingEndDate,
+      createdAt: _book.createdAt,
+      updatedAt: _book.updatedAt,
+    );
+
+    try {
+      await widget.repository.updateBook(
+        id: _book.id,
+        userId: _book.userId,
+        title: _book.title,
+        author: _book.author,
+        status: submitted,
+        rating: updatedRating,
+        isbn: _book.isbn,
+        pages: _book.pages,
+        publisher: _book.publisher,
+        languageCode: _book.languageCode,
+        coverUrl: _book.coverUrl,
+        seriesId: _book.seriesId,
+        volume: _book.volume,
+        genreId: _book.genreId,
+        ageCategory: _book.ageCategory,
+        releaseDate: _book.releaseDate,
+        format: _book.format,
+        description: _book.description,
+        readingStartDate: _book.readingStartDate,
+        readingEndDate: _book.readingEndDate,
       );
 
       if (!mounted) {
@@ -334,6 +481,14 @@ class _BookDetailPageState extends State<BookDetailPage> {
         .join(' ');
   }
 
+  bool get _hasDescription {
+    return _book.description != null && _book.description!.trim().isNotEmpty;
+  }
+
+  String get _descriptionDisplayValue {
+    return _book.description?.trim() ?? '';
+  }
+
   bool get _hasSeries {
     return _book.seriesId != null && _book.seriesId!.isNotEmpty;
   }
@@ -345,7 +500,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     if (_book.volume == null) {
       return _book.seriesId!;
     }
-    return '${_book.seriesId!} · Vol. ${_book.volume}';
+    return '${_book.seriesId!} Â· Vol. ${_book.volume}';
   }
   double _responsiveContentWidth(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -446,12 +601,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
                             const SizedBox(height: 10),
                             _BookHeaderRating(
                               rating: _book.rating,
-                              onTap: _isSaving || _book.status != 'read'
-                                  ? null
-                                  : _showEditRatingDialog,
+                              onTap: _isSaving ? null : _showEditRatingDialog,
                             ),
                             const SizedBox(height: 10),
-                            _BookStatusButton(status: _book.status),
+                            _BookStatusButton(
+                              status: _formatReadableLabel(_book.status),
+                              onPressed: _isSaving ? null : _showEditStatusDialog,
+                            ),
                           ],
                         ),
                       ),
@@ -461,6 +617,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       _BookDetailSection(
                         title: 'Book info',
                         children: [
+                          if (_hasDescription)
+                            _BookDetailRow(
+                              label: 'Description',
+                              value: _descriptionDisplayValue,
+                            ),
                           _BookDetailRow(
                             label: 'Genre',
                             value: _book.genreId ?? '-',
@@ -530,6 +691,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

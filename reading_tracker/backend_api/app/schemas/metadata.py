@@ -14,4 +14,5 @@ class BookEnrichmentResponse(BaseModel):
     age_category: str | None = None
     release_date: str | None = None
     format: str | None = None
+    description: str | None = None
 

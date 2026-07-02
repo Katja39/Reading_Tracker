@@ -48,6 +48,65 @@ def _to_slug(value: str | None) -> str | None:
     return slug if slug else None
 
 
+def _text_value(value: Any) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    if isinstance(value, dict):
+        raw_value = value.get("value")
+        if isinstance(raw_value, str) and raw_value.strip():
+            return raw_value.strip()
+    if isinstance(value, list) and value:
+        return _text_value(value[0])
+    return None
+
+
+def _description_from_details(details: dict[str, Any] | None) -> str | None:
+    if details is None:
+        return None
+    return (
+        _text_value(details.get("description"))
+        or _text_value(details.get("first_sentence"))
+    )
+
+
+def _work_key_from_details(details: dict[str, Any] | None) -> str | None:
+    if details is None:
+        return None
+    works = details.get("works")
+    if isinstance(works, list) and works:
+        work_key = works[0].get("key")
+        if isinstance(work_key, str) and work_key.startswith("/works/"):
+            return work_key
+    return None
+
+
+def _edition_json_url_from_item(item: dict[str, Any]) -> str | None:
+    raw_url = item.get("url")
+    if not isinstance(raw_url, str) or "/books/" not in raw_url:
+        return None
+    path = urllib.parse.urlparse(raw_url).path
+    parts = [part for part in path.split("/") if part]
+    if len(parts) < 2 or parts[0] != "books":
+        return None
+    return f"https://openlibrary.org/books/{urllib.parse.quote(parts[1])}.json"
+
+
+def _fetch_json(url: str) -> dict[str, Any] | None:
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": OPEN_LIBRARY_USER_AGENT,
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            payload = loads(response.read().decode("utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
 def _age_category_from_subject(subject: str | None) -> str | None:
     if subject is None:
         return None
@@ -117,6 +176,23 @@ def fetch_open_library_enrichment(isbn: str) -> BookEnrichmentResponse | None:
     if not isinstance(item, dict):
         return None
 
+    edition_details = _fetch_json(
+        f"https://openlibrary.org/isbn/{urllib.parse.quote(normalized_isbn)}.json"
+    )
+    if edition_details is None:
+        edition_json_url = _edition_json_url_from_item(item)
+        if edition_json_url is not None:
+            edition_details = _fetch_json(edition_json_url)
+
+    description = _text_value(item.get("description"))
+    if description is None:
+        description = _description_from_details(edition_details)
+
+    work_key = _work_key_from_details(edition_details)
+    if description is None and work_key is not None:
+        work_details = _fetch_json(f"https://openlibrary.org{work_key}.json")
+        description = _description_from_details(work_details)
+
     pages = item.get("number_of_pages")
     pages_value = pages if isinstance(pages, int) and pages > 0 else None
     first_subject = _first_subject(item.get("subjects"))
@@ -148,5 +224,6 @@ def fetch_open_library_enrichment(isbn: str) -> BookEnrichmentResponse | None:
         age_category=age_category,
         release_date=release_date,
         format=book_format,
+        description=description,
     )
 

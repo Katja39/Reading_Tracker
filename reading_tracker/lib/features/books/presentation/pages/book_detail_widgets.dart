@@ -41,17 +41,32 @@ class _BookDetailSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        ...children.expand(
-          (child) => [
-            child,
-            const SizedBox(height: 12),
-          ],
-        ).take(children.length * 2 - 1),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = 16.0;
+            final useColumns = constraints.maxWidth >= 640;
+            final itemWidth = useColumns
+                ? (constraints.maxWidth - spacing) / 2
+                : constraints.maxWidth;
+
+            return Wrap(
+              spacing: spacing,
+              runSpacing: 12,
+              children: children
+                  .map(
+                    (child) => SizedBox(
+                      width: itemWidth,
+                      child: child,
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
       ],
     );
   }
 }
-
 class _BookHeaderRating extends StatelessWidget {
   const _BookHeaderRating({required this.rating, required this.onTap});
 
@@ -89,16 +104,20 @@ class _BookHeaderRating extends StatelessWidget {
 
 
 class _BookStatusButton extends StatelessWidget {
-  const _BookStatusButton({required this.status});
+  const _BookStatusButton({
+    required this.status,
+    required this.onPressed,
+  });
 
   final String status;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return FilledButton.tonal(
-      onPressed: () {},
+      onPressed: onPressed,
       style: FilledButton.styleFrom(
         foregroundColor: theme.colorScheme.onPrimaryContainer,
         backgroundColor: theme.colorScheme.primaryContainer,
@@ -113,5 +132,9 @@ class _BookStatusButton extends StatelessWidget {
     );
   }
 }
+
+
+
+
 
 

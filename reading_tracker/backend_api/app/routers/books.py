@@ -64,7 +64,12 @@ def list_books() -> list[dict[str, Any]]:
                     genre_id,
                     age_category,
                     release_date::text AS release_date,
-                    format
+                    format,
+                    description,
+                    reading_start_date::text AS reading_start_date,
+                    reading_end_date::text AS reading_end_date,
+                    created_at::text AS created_at,
+                    updated_at::text AS updated_at
                 FROM books
                 WHERE user_id = %s
                 ORDER BY title ASC
@@ -97,9 +102,10 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                 """
                 INSERT INTO books (
                     user_id, title, author, status, rating, isbn, pages, publisher, language_code, cover_url,
-                    series_id, volume, genre_id, age_category, release_date, format
+                    series_id, volume, genre_id, age_category, release_date, format,
+                    description, reading_start_date, reading_end_date
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING
                     id::text AS id,
                     user_id::text AS user_id,
@@ -117,7 +123,12 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     genre_id,
                     age_category,
                     release_date::text AS release_date,
-                    format
+                    format,
+                    description,
+                    reading_start_date::text AS reading_start_date,
+                    reading_end_date::text AS reading_end_date,
+                    created_at::text AS created_at,
+                    updated_at::text AS updated_at
                 """,
                 (
                     DEFAULT_USER_ID,
@@ -136,6 +147,9 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     payload.age_category.strip().lower() if payload.age_category else None,
                     payload.release_date,
                     payload.format.strip().lower() if payload.format else None,
+                    payload.description.strip() if payload.description else None,
+                    payload.reading_start_date,
+                    payload.reading_end_date,
                 ),
             )
             return cursor.fetchone()
@@ -178,7 +192,10 @@ def update_book(
                     genre_id = %s,
                     age_category = %s,
                     release_date = %s,
-                    format = %s
+                    format = %s,
+                    description = %s,
+                    reading_start_date = %s,
+                    reading_end_date = %s
                 WHERE id = %s AND user_id = %s
                 RETURNING
                     id::text AS id,
@@ -197,7 +214,12 @@ def update_book(
                     genre_id,
                     age_category,
                     release_date::text AS release_date,
-                    format
+                    format,
+                    description,
+                    reading_start_date::text AS reading_start_date,
+                    reading_end_date::text AS reading_end_date,
+                    created_at::text AS created_at,
+                    updated_at::text AS updated_at
                 """,
                 (
                     payload.title.strip(),
@@ -215,6 +237,9 @@ def update_book(
                     payload.age_category.strip().lower() if payload.age_category else None,
                     payload.release_date,
                     payload.format.strip().lower() if payload.format else None,
+                    payload.description.strip() if payload.description else None,
+                    payload.reading_start_date,
+                    payload.reading_end_date,
                     book_id,
                     DEFAULT_USER_ID,
                 ),
@@ -264,4 +289,7 @@ def delete_book(book_id: str) -> None:
 
     if deleted is None:
         raise HTTPException(status_code=404, detail="Book not found")
+
+
+
 

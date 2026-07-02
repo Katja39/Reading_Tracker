@@ -27,6 +27,9 @@ def ensure_default_user(connection: psycopg.Connection) -> None:
 def ensure_schema(connection: psycopg.Connection) -> None:
     statements = [
         """
+        CREATE EXTENSION IF NOT EXISTS pgcrypto
+        """,
+        """
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid()
         )
@@ -68,7 +71,30 @@ def ensure_schema(connection: psycopg.Connection) -> None:
         ADD COLUMN IF NOT EXISTS genre_id TEXT,
         ADD COLUMN IF NOT EXISTS age_category TEXT,
         ADD COLUMN IF NOT EXISTS release_date DATE,
-        ADD COLUMN IF NOT EXISTS format TEXT
+        ADD COLUMN IF NOT EXISTS format TEXT,
+        ADD COLUMN IF NOT EXISTS description TEXT,
+        ADD COLUMN IF NOT EXISTS reading_start_date DATE,
+        ADD COLUMN IF NOT EXISTS reading_end_date DATE,
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        """,
+        """
+        CREATE OR REPLACE FUNCTION set_books_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """,
+        """
+        DROP TRIGGER IF EXISTS trg_books_updated_at ON books
+        """,
+        """
+        CREATE TRIGGER trg_books_updated_at
+        BEFORE UPDATE ON books
+        FOR EACH ROW
+        EXECUTE FUNCTION set_books_updated_at()
         """,
         """
         CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id)

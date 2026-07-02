@@ -43,6 +43,9 @@ class ApiBookRepository implements BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    String? readingStartDate,
+    String? readingEndDate,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -85,7 +88,15 @@ class ApiBookRepository implements BookRepository {
     if (format != null) {
       payload['format'] = format;
     }
-
+    if (description != null) {
+      payload['description'] = description;
+    }
+    if (readingStartDate != null) {
+      payload['reading_start_date'] = readingStartDate;
+    }
+    if (readingEndDate != null) {
+      payload['reading_end_date'] = readingEndDate;
+    }
     final response = await _client.post(
       Uri.parse('$baseUrl/books'),
       headers: {'Content-Type': 'application/json'},
@@ -115,6 +126,9 @@ class ApiBookRepository implements BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    String? readingStartDate,
+    String? readingEndDate,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -157,7 +171,15 @@ class ApiBookRepository implements BookRepository {
     if (format != null) {
       payload['format'] = format;
     }
-
+    if (description != null) {
+      payload['description'] = description;
+    }
+    if (readingStartDate != null) {
+      payload['reading_start_date'] = readingStartDate;
+    }
+    if (readingEndDate != null) {
+      payload['reading_end_date'] = readingEndDate;
+    }
     final response = await _client.put(
       Uri.parse('$baseUrl/books/$id'),
       headers: {'Content-Type': 'application/json'},
@@ -185,6 +207,9 @@ class ApiBookRepository implements BookRepository {
         ageCategory: ageCategory,
         releaseDate: releaseDate,
         format: format,
+        description: description,
+        readingStartDate: readingStartDate,
+        readingEndDate: readingEndDate,
       );
     }
 
@@ -209,6 +234,9 @@ class ApiBookRepository implements BookRepository {
         ageCategory: ageCategory,
         releaseDate: releaseDate,
         format: format,
+        description: description,
+        readingStartDate: readingStartDate,
+        readingEndDate: readingEndDate,
       );
     }
   }
@@ -358,3 +386,5 @@ class ApiBookRepository implements BookRepository {
     return response.statusCode >= 200 && response.statusCode < 300;
   }
 }
+
+

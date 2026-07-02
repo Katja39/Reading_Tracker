@@ -21,6 +21,7 @@ class BookFormResult {
     required this.ageCategory,
     required this.releaseDate,
     required this.format,
+    required this.description,
   });
 
   final String title;
@@ -38,6 +39,7 @@ class BookFormResult {
   final String? ageCategory;
   final String? releaseDate;
   final String? format;
+  final String? description;
 }
 
 class BookFormDialog extends StatefulWidget {
@@ -79,6 +81,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
   late final TextEditingController _volumeController;
   late final TextEditingController _genreIdController;
   late final TextEditingController _releaseDateController;
+  late final TextEditingController _descriptionController;
   late final MenuController _genreMenuController;
   late final MenuController _seriesMenuController;
   late final String _defaultStatus;
@@ -124,6 +127,9 @@ class _BookFormDialogState extends State<BookFormDialog> {
     _releaseDateController = TextEditingController(
       text: initialBook?.releaseDate ?? '',
     );
+    _descriptionController = TextEditingController(
+      text: initialBook?.description ?? '',
+    );
     _genreMenuController = MenuController();
     _seriesMenuController = MenuController();
     _defaultStatus = widget.statuses.first;
@@ -161,6 +167,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     _volumeController.dispose();
     _genreIdController.dispose();
     _releaseDateController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -224,6 +231,9 @@ class _BookFormDialogState extends State<BookFormDialog> {
             ? null
             : _releaseDateController.text.trim(),
         format: _selectedFormat,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
       ),
     );
   }
@@ -535,6 +545,9 @@ class _BookFormDialogState extends State<BookFormDialog> {
       }
       if (enrichment.format != null && enrichment.format!.isNotEmpty) {
         _selectedFormat = enrichment.format;
+      }
+      if (enrichment.description != null && enrichment.description!.isNotEmpty) {
+        _descriptionController.text = enrichment.description!;
       }
       _coverUrl = enrichment.coverUrl;
       _autoFillMessage = 'Fields updated from Open Library.';
@@ -924,6 +937,15 @@ class _BookFormDialogState extends State<BookFormDialog> {
                 ),
                 useTwoColumns,
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _descriptionController,
+                minLines: 3,
+                maxLines: 6,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                ),
+              ),
               if (widget.enableInlineRating && _selectedStatus == 'read') ...[
                 const SizedBox(height: 16),
                 Align(
@@ -980,3 +1002,5 @@ class _BookFormDialogState extends State<BookFormDialog> {
     );
   }
 }
+
+

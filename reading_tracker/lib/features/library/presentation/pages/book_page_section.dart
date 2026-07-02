@@ -36,90 +36,6 @@ extension _BookPageSections on _BookPageState {
     return screenWidth;
   }
 
-  Widget _buildStartTab(ThemeData theme) {
-    final maxWidth = _responsiveContentWidth(context);
-    final readingBooks = _books
-        .where((book) => book.status.toLowerCase() == 'reading')
-        .toList();
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Currently reading',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 220,
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : readingBooks.isEmpty
-                        ? Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              'No books currently in progress.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: readingBooks.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 14),
-                            itemBuilder: (context, index) {
-                              return _buildCurrentlyReadingCard(
-                                theme,
-                                readingBooks[index],
-                              );
-                            },
-                          ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCurrentlyReadingCard(ThemeData theme, Book book) {
-    return SizedBox(
-      width: 132,
-      child: InkWell(
-        onTap: () => _openBookDetails(book),
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBookCover(
-                book,
-                width: 124,
-                height: 176,
-                borderRadius: 8,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                book.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
     final maxWidth = _responsiveContentWidth(context);
     final isMobile = MediaQuery.sizeOf(context).width < 700;
@@ -837,16 +753,8 @@ extension _BookPageSections on _BookPageState {
       ],
     );
   }
-
-  Widget _buildStatisticsTab(ThemeData theme) {
-    return Center(
-      child: Text(
-        'This page is empty.',
-        style: theme.textTheme.bodyLarge,
-      ),
-    );
-  }
 }
+
 
 
 

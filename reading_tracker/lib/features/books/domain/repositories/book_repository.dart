@@ -20,6 +20,9 @@ abstract class BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    String? readingStartDate,
+    String? readingEndDate,
   });
 
   Future<Book> updateBook({
@@ -40,6 +43,9 @@ abstract class BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    String? readingStartDate,
+    String? readingEndDate,
   });
 
   Future<void> deleteBook({
@@ -70,3 +76,4 @@ abstract class BookRepository {
     required String name,
   });
 }
+

@@ -7,7 +7,9 @@ import '../../../books/presentation/widgets/book_form_dialog.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
 part 'book_page_dialog.dart';
+part 'home_page_section.dart';
 part 'book_page_section.dart';
+part 'statistics_page_section.dart';
 
 enum _LibraryField {
   title,
@@ -245,6 +247,7 @@ class _BookPageState extends State<BookPage> {
         ageCategory: submitted.ageCategory,
         releaseDate: submitted.releaseDate,
         format: submitted.format,
+        description: submitted.description,
       );
 
       if (!mounted) {
@@ -1039,6 +1042,8 @@ class _TopNavButton extends StatelessWidget {
     );
   }
 }
+
+
 
 
 

@@ -12,6 +12,7 @@ class BookEnrichment {
     this.ageCategory,
     this.releaseDate,
     this.format,
+    this.description,
   });
 
   final String isbn;
@@ -26,6 +27,7 @@ class BookEnrichment {
   final String? ageCategory;
   final String? releaseDate;
   final String? format;
+  final String? description;
 
   factory BookEnrichment.fromJson(Map<String, dynamic> json) {
     final pagesValue = json['pages'];
@@ -42,6 +44,7 @@ class BookEnrichment {
       ageCategory: json['age_category'] as String?,
       releaseDate: json['release_date'] as String?,
       format: json['format'] as String?,
+      description: json['description'] as String?,
     );
   }
 }

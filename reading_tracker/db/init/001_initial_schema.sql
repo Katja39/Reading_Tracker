@@ -21,7 +21,12 @@ CREATE TABLE IF NOT EXISTS books (
     genre_id TEXT,
     age_category TEXT,
     release_date DATE,
-    format TEXT
+    format TEXT,
+    description TEXT,
+    reading_start_date DATE,
+    reading_end_date DATE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS series (
@@ -39,3 +44,24 @@ CREATE TABLE IF NOT EXISTS genres (
 
 CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
 CREATE INDEX IF NOT EXISTS idx_books_user_title ON books(user_id, title);
+
+ALTER TABLE books
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS reading_start_date DATE,
+    ADD COLUMN IF NOT EXISTS reading_end_date DATE,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+CREATE OR REPLACE FUNCTION set_books_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_books_updated_at ON books;
+CREATE TRIGGER trg_books_updated_at
+BEFORE UPDATE ON books
+FOR EACH ROW
+EXECUTE FUNCTION set_books_updated_at();
