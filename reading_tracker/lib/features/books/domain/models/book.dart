@@ -18,6 +18,7 @@ class Book {
     this.releaseDate,
     this.format,
     this.description,
+    this.currentPage,
     this.readingStartDate,
     this.readingEndDate,
     this.createdAt,
@@ -42,6 +43,7 @@ class Book {
   final String? releaseDate;
   final String? format;
   final String? description;
+  final int? currentPage;
   final String? readingStartDate;
   final String? readingEndDate;
   final String? createdAt;
@@ -51,6 +53,7 @@ class Book {
     final ratingValue = json['rating'];
     final pagesValue = json['pages'];
     final volumeValue = json['volume'];
+    final currentPageValue = json['currentPage'];
     return Book(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -70,6 +73,7 @@ class Book {
       releaseDate: json['release_date'] as String?,
       format: json['format'] as String?,
       description: json['description'] as String?,
+      currentPage: currentPageValue is num ? currentPageValue.toInt() : null,
       readingStartDate: json['reading_start_date'] as String?,
       readingEndDate: json['reading_end_date'] as String?,
       createdAt: json['created_at'] as String?,

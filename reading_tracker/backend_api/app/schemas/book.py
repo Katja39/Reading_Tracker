@@ -18,6 +18,7 @@ class CreateBookRequest(BaseModel):
     release_date: str | None = Field(default=None, max_length=10)
     format: str | None = Field(default=None, max_length=50)
     description: str | None = Field(default=None, max_length=10000)
+    currentPage: int | None = Field(default=None, ge=1, le=100000)
     reading_start_date: str | None = Field(default=None, max_length=10)
     reading_end_date: str | None = Field(default=None, max_length=10)
 
@@ -39,6 +40,7 @@ class UpdateBookRequest(BaseModel):
     release_date: str | None = Field(default=None, max_length=10)
     format: str | None = Field(default=None, max_length=50)
     description: str | None = Field(default=None, max_length=10000)
+    currentPage: int | None = Field(default=None, ge=1, le=100000)
     reading_start_date: str | None = Field(default=None, max_length=10)
     reading_end_date: str | None = Field(default=None, max_length=10)
 
@@ -62,6 +64,7 @@ class BookResponse(BaseModel):
     release_date: str | None
     format: str | None
     description: str | None
+    currentPage: int | None
     reading_start_date: str | None
     reading_end_date: str | None
     created_at: str | None

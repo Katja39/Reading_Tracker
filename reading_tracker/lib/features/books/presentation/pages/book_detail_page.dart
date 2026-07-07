@@ -83,6 +83,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final releaseDate = submitted.releaseDate;
     final format = submitted.format;
     final description = submitted.description;
+    final currentPage = status == 'reading' ? submitted.currentPage : null;
     final ratingForStatus = status == 'read' ? _book.rating : null;
     final shouldPromptForRating =
         _book.status != 'read' && status == 'read' && ratingForStatus == null;
@@ -125,6 +126,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       releaseDate: releaseDate,
       format: format,
       description: description,
+      currentPage: currentPage,
       readingStartDate: _book.readingStartDate,
       readingEndDate: _book.readingEndDate,
       createdAt: _book.createdAt,
@@ -152,6 +154,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         releaseDate: releaseDate,
         format: format,
         description: description,
+        currentPage: currentPage,
         readingStartDate: _book.readingStartDate,
         readingEndDate: _book.readingEndDate,
       );
@@ -200,6 +203,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final rating = submitted.rating;
 
     final updatedStatus = rating == null ? _book.status : 'read';
+    final updatedCurrentPage = updatedStatus == 'reading' ? _book.currentPage : null;
 
     if (rating == _book.rating && updatedStatus == _book.status) {
       return;
@@ -229,6 +233,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       releaseDate: _book.releaseDate,
       format: _book.format,
       description: _book.description,
+      currentPage: updatedCurrentPage,
       readingStartDate: _book.readingStartDate,
       readingEndDate: _book.readingEndDate,
       createdAt: _book.createdAt,
@@ -255,6 +260,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         releaseDate: _book.releaseDate,
         format: _book.format,
         description: _book.description,
+        currentPage: updatedCurrentPage,
         readingStartDate: _book.readingStartDate,
         readingEndDate: _book.readingEndDate,
       );
@@ -332,6 +338,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
 
     final updatedRating = submitted == 'read' ? _book.rating : null;
+    final updatedCurrentPage = submitted == 'reading' ? _book.currentPage : null;
 
     setState(() {
       _isSaving = true;
@@ -357,6 +364,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       releaseDate: _book.releaseDate,
       format: _book.format,
       description: _book.description,
+      currentPage: updatedCurrentPage,
       readingStartDate: _book.readingStartDate,
       readingEndDate: _book.readingEndDate,
       createdAt: _book.createdAt,
@@ -383,6 +391,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         releaseDate: _book.releaseDate,
         format: _book.format,
         description: _book.description,
+        currentPage: updatedCurrentPage,
         readingStartDate: _book.readingStartDate,
         readingEndDate: _book.readingEndDate,
       );
@@ -638,6 +647,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
                             label: 'Pages',
                             value: _book.pages?.toString() ?? '-',
                           ),
+                          if (_book.status == 'reading')
+                            _BookDetailRow(
+                              label: 'Current page',
+                              value: _book.currentPage?.toString() ?? '-',
+                            ),
                         ],
                       ),
                       if (_hasSeries) ...[

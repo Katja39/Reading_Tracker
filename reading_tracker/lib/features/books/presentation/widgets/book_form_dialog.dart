@@ -22,6 +22,7 @@ class BookFormResult {
     required this.releaseDate,
     required this.format,
     required this.description,
+    required this.currentPage,
   });
 
   final String title;
@@ -40,6 +41,7 @@ class BookFormResult {
   final String? releaseDate;
   final String? format;
   final String? description;
+  final int? currentPage;
 }
 
 class BookFormDialog extends StatefulWidget {
@@ -81,6 +83,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
   late final TextEditingController _volumeController;
   late final TextEditingController _genreIdController;
   late final TextEditingController _releaseDateController;
+  late final TextEditingController _currentPageController;
   late final TextEditingController _descriptionController;
   late final MenuController _genreMenuController;
   late final MenuController _seriesMenuController;
@@ -127,6 +130,9 @@ class _BookFormDialogState extends State<BookFormDialog> {
     _releaseDateController = TextEditingController(
       text: initialBook?.releaseDate ?? '',
     );
+    _currentPageController = TextEditingController(
+      text: initialBook?.currentPage?.toString() ?? '',
+    );
     _descriptionController = TextEditingController(
       text: initialBook?.description ?? '',
     );
@@ -167,6 +173,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     _volumeController.dispose();
     _genreIdController.dispose();
     _releaseDateController.dispose();
+    _currentPageController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -194,6 +201,10 @@ class _BookFormDialogState extends State<BookFormDialog> {
   void _submit() {
     final pagesText = _pagesController.text.trim();
     final pages = pagesText.isEmpty ? null : int.tryParse(pagesText);
+    final currentPageText = _currentPageController.text.trim();
+    final currentPage = currentPageText.isEmpty
+        ? null
+        : int.tryParse(currentPageText);
     final volumeText = _volumeController.text.trim();
     final volume = volumeText.isEmpty ? null : int.tryParse(volumeText);
 
@@ -234,6 +245,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
+        currentPage: _selectedStatus == 'reading' ? currentPage : null,
       ),
     );
   }
@@ -938,6 +950,16 @@ class _BookFormDialogState extends State<BookFormDialog> {
                 useTwoColumns,
               ),
               const SizedBox(height: 16),
+              if (_selectedStatus == 'reading') ...[
+                TextField(
+                  controller: _currentPageController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Current page (optional)',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextField(
                 controller: _descriptionController,
                 minLines: 3,

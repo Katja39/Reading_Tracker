@@ -18,6 +18,7 @@ enum _LibraryField {
   rating,
   isbn,
   pages,
+  currentPage,
   publisher,
   languageCode,
   seriesId,
@@ -67,6 +68,7 @@ class _BookPageState extends State<BookPage> {
     _LibraryField.rating,
     _LibraryField.isbn,
     _LibraryField.pages,
+    _LibraryField.currentPage,
     _LibraryField.publisher,
     _LibraryField.languageCode,
     _LibraryField.seriesId,
@@ -82,6 +84,7 @@ class _BookPageState extends State<BookPage> {
     _LibraryField.rating,
     _LibraryField.isbn,
     _LibraryField.pages,
+    _LibraryField.currentPage,
     _LibraryField.publisher,
     _LibraryField.languageCode,
     _LibraryField.seriesId,
@@ -248,6 +251,7 @@ class _BookPageState extends State<BookPage> {
         releaseDate: submitted.releaseDate,
         format: submitted.format,
         description: submitted.description,
+        currentPage: submitted.currentPage,
       );
 
       if (!mounted) {
@@ -280,6 +284,8 @@ class _BookPageState extends State<BookPage> {
         return (left.rating ?? -1).compareTo(right.rating ?? -1);
       case _LibraryField.pages:
         return (left.pages ?? -1).compareTo(right.pages ?? -1);
+      case _LibraryField.currentPage:
+        return (left.currentPage ?? -1).compareTo(right.currentPage ?? -1);
       case _LibraryField.volume:
         return (left.volume ?? -1).compareTo(right.volume ?? -1);
       default:
@@ -358,6 +364,8 @@ class _BookPageState extends State<BookPage> {
         return 'ISBN';
       case _LibraryField.pages:
         return 'Pages';
+      case _LibraryField.currentPage:
+        return 'Current page';
       case _LibraryField.publisher:
         return 'Publisher';
       case _LibraryField.languageCode:
@@ -391,6 +399,8 @@ class _BookPageState extends State<BookPage> {
         return book.isbn ?? '-';
       case _LibraryField.pages:
         return book.pages?.toString() ?? '-';
+      case _LibraryField.currentPage:
+        return book.currentPage?.toString() ?? '-';
       case _LibraryField.publisher:
         return book.publisher ?? '-';
       case _LibraryField.languageCode:

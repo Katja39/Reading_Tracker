@@ -73,6 +73,7 @@ def ensure_schema(connection: psycopg.Connection) -> None:
         ADD COLUMN IF NOT EXISTS release_date DATE,
         ADD COLUMN IF NOT EXISTS format TEXT,
         ADD COLUMN IF NOT EXISTS description TEXT,
+        ADD COLUMN IF NOT EXISTS currentPage INTEGER,
         ADD COLUMN IF NOT EXISTS reading_start_date DATE,
         ADD COLUMN IF NOT EXISTS reading_end_date DATE,
         ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

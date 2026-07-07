@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS books (
     release_date DATE,
     format TEXT,
     description TEXT,
+    currentPage INTEGER,
     reading_start_date DATE,
     reading_end_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -66,6 +66,7 @@ def list_books() -> list[dict[str, Any]]:
                     release_date::text AS release_date,
                     format,
                     description,
+                    currentPage AS "currentPage",
                     reading_start_date::text AS reading_start_date,
                     reading_end_date::text AS reading_end_date,
                     created_at::text AS created_at,
@@ -81,12 +82,19 @@ def list_books() -> list[dict[str, Any]]:
 
 @router.post("/books", response_model=BookResponse, status_code=201)
 def create_book(payload: CreateBookRequest) -> dict[str, Any]:
+    status = normalize_status(payload.status)
+    current_page = payload.currentPage if status == "reading" else None
     series_name = normalize_series_name(payload.series_id)
     genre_name = normalize_genre_name(payload.genre_id)
     if payload.volume is not None and series_name is None:
         raise HTTPException(
             status_code=400,
             detail="volume can only be set when series_id is provided",
+        )
+    if current_page is not None and payload.pages is not None and current_page > payload.pages:
+        raise HTTPException(
+            status_code=400,
+            detail="currentPage must not be greater than pages",
         )
 
     with get_connection() as connection:
@@ -103,9 +111,9 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                 INSERT INTO books (
                     user_id, title, author, status, rating, isbn, pages, publisher, language_code, cover_url,
                     series_id, volume, genre_id, age_category, release_date, format,
-                    description, reading_start_date, reading_end_date
+                    description, currentPage, reading_start_date, reading_end_date
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING
                     id::text AS id,
                     user_id::text AS user_id,
@@ -125,6 +133,7 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     release_date::text AS release_date,
                     format,
                     description,
+                    currentPage AS "currentPage",
                     reading_start_date::text AS reading_start_date,
                     reading_end_date::text AS reading_end_date,
                     created_at::text AS created_at,
@@ -134,7 +143,7 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     DEFAULT_USER_ID,
                     payload.title.strip(),
                     payload.author.strip(),
-                    normalize_status(payload.status),
+                    status,
                     payload.rating,
                     payload.isbn.strip() if payload.isbn else None,
                     payload.pages,
@@ -148,6 +157,7 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     payload.release_date,
                     payload.format.strip().lower() if payload.format else None,
                     payload.description.strip() if payload.description else None,
+                    current_page,
                     payload.reading_start_date,
                     payload.reading_end_date,
                 ),
@@ -160,12 +170,19 @@ def update_book(
     book_id: str,
     payload: UpdateBookRequest,
 ) -> dict[str, Any]:
+    status = normalize_status(payload.status)
+    current_page = payload.currentPage if status == "reading" else None
     series_name = normalize_series_name(payload.series_id)
     genre_name = normalize_genre_name(payload.genre_id)
     if payload.volume is not None and series_name is None:
         raise HTTPException(
             status_code=400,
             detail="volume can only be set when series_id is provided",
+        )
+    if current_page is not None and payload.pages is not None and current_page > payload.pages:
+        raise HTTPException(
+            status_code=400,
+            detail="currentPage must not be greater than pages",
         )
 
     with get_connection() as connection:
@@ -194,6 +211,7 @@ def update_book(
                     release_date = %s,
                     format = %s,
                     description = %s,
+                    currentPage = %s,
                     reading_start_date = %s,
                     reading_end_date = %s
                 WHERE id = %s AND user_id = %s
@@ -216,6 +234,7 @@ def update_book(
                     release_date::text AS release_date,
                     format,
                     description,
+                    currentPage AS "currentPage",
                     reading_start_date::text AS reading_start_date,
                     reading_end_date::text AS reading_end_date,
                     created_at::text AS created_at,
@@ -224,7 +243,7 @@ def update_book(
                 (
                     payload.title.strip(),
                     payload.author.strip(),
-                    normalize_status(payload.status),
+                    status,
                     payload.rating,
                     payload.isbn.strip() if payload.isbn else None,
                     payload.pages,
@@ -238,6 +257,7 @@ def update_book(
                     payload.release_date,
                     payload.format.strip().lower() if payload.format else None,
                     payload.description.strip() if payload.description else None,
+                    current_page,
                     payload.reading_start_date,
                     payload.reading_end_date,
                     book_id,

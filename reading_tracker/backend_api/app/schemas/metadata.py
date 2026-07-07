@@ -15,4 +15,5 @@ class BookEnrichmentResponse(BaseModel):
     release_date: str | None = None
     format: str | None = None
     description: str | None = None
+    currentPage: int | None = None
 

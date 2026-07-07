@@ -44,6 +44,7 @@ class ApiBookRepository implements BookRepository {
     String? releaseDate,
     String? format,
     String? description,
+    int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
   }) async {
@@ -91,6 +92,7 @@ class ApiBookRepository implements BookRepository {
     if (description != null) {
       payload['description'] = description;
     }
+    payload['currentPage'] = status == 'reading' ? currentPage : null;
     if (readingStartDate != null) {
       payload['reading_start_date'] = readingStartDate;
     }
@@ -127,6 +129,7 @@ class ApiBookRepository implements BookRepository {
     String? releaseDate,
     String? format,
     String? description,
+    int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
   }) async {
@@ -174,6 +177,7 @@ class ApiBookRepository implements BookRepository {
     if (description != null) {
       payload['description'] = description;
     }
+    payload['currentPage'] = status == 'reading' ? currentPage : null;
     if (readingStartDate != null) {
       payload['reading_start_date'] = readingStartDate;
     }
@@ -208,6 +212,7 @@ class ApiBookRepository implements BookRepository {
         releaseDate: releaseDate,
         format: format,
         description: description,
+        currentPage: status == 'reading' ? currentPage : null,
         readingStartDate: readingStartDate,
         readingEndDate: readingEndDate,
       );
@@ -235,6 +240,7 @@ class ApiBookRepository implements BookRepository {
         releaseDate: releaseDate,
         format: format,
         description: description,
+        currentPage: status == 'reading' ? currentPage : null,
         readingStartDate: readingStartDate,
         readingEndDate: readingEndDate,
       );

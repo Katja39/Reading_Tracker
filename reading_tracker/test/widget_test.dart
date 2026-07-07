@@ -538,6 +538,10 @@ class FakeBookRepository implements BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    int? currentPage,
+    String? readingStartDate,
+    String? readingEndDate,
   }) async {
     return Book(
       id: 'book-1',
@@ -557,6 +561,10 @@ class FakeBookRepository implements BookRepository {
       ageCategory: ageCategory,
       releaseDate: releaseDate,
       format: format,
+      description: description,
+      currentPage: status == 'reading' ? currentPage : null,
+      readingStartDate: readingStartDate,
+      readingEndDate: readingEndDate,
     );
   }
 
@@ -571,6 +579,7 @@ class FakeBookRepository implements BookRepository {
         status: 'reading',
         rating: 4,
         pages: 321,
+        currentPage: 87,
       ),
       Book(
         id: 'book-2',
@@ -610,6 +619,10 @@ class FakeBookRepository implements BookRepository {
     String? ageCategory,
     String? releaseDate,
     String? format,
+    String? description,
+    int? currentPage,
+    String? readingStartDate,
+    String? readingEndDate,
   }) async {
     return Book(
       id: id,
@@ -629,6 +642,10 @@ class FakeBookRepository implements BookRepository {
       ageCategory: ageCategory,
       releaseDate: releaseDate,
       format: format,
+      description: description,
+      currentPage: status == 'reading' ? currentPage : null,
+      readingStartDate: readingStartDate,
+      readingEndDate: readingEndDate,
     );
   }
 

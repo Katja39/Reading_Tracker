@@ -21,6 +21,7 @@ abstract class BookRepository {
     String? releaseDate,
     String? format,
     String? description,
+    int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
   });
@@ -44,6 +45,7 @@ abstract class BookRepository {
     String? releaseDate,
     String? format,
     String? description,
+    int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
   });
