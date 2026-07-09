@@ -1,10 +1,18 @@
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from ..config import DEFAULT_USER_ID
 from ..db import ensure_default_user, get_connection
-from ..schemas.book import BookResponse, CreateBookRequest, UpdateBookRequest
+from ..schemas.book import (
+    BookResponse,
+    CreateBookRequest,
+    CreateReadingProgressRequest,
+    ReadingProgressResponse,
+    UpdateBookRequest,
+    UpdateReadingProgressRequest,
+)
 from ..services.normalizers import (
     normalize_genre_name,
     normalize_series_name,
@@ -13,6 +21,61 @@ from ..services.normalizers import (
 
 router = APIRouter()
 
+def _resolve_progress_date(value: str | None) -> str:
+    if value is None:
+        return date.today().isoformat()
+    try:
+        return date.fromisoformat(value).isoformat()
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail="progress_date must use YYYY-MM-DD format",
+        ) from error
+
+
+def _refresh_book_current_page(cursor: Any, book_id: str) -> dict[str, Any]:
+    cursor.execute(
+        """
+        UPDATE books
+        SET currentPage = (
+            SELECT page_number
+            FROM reading_progress_entries
+            WHERE book_id = %s AND user_id = %s
+            ORDER BY progress_date DESC, updated_at DESC
+            LIMIT 1
+        )
+        WHERE id = %s AND user_id = %s
+        RETURNING
+            id::text AS id,
+            user_id::text AS user_id,
+            title,
+            author,
+            status,
+            rating,
+            isbn,
+            pages,
+            publisher,
+            language_code,
+            cover_url,
+            series_id,
+            volume,
+            genre_id,
+            age_category,
+            release_date::text AS release_date,
+            format,
+            description,
+            currentPage AS "currentPage",
+            reading_start_date::text AS reading_start_date,
+            reading_end_date::text AS reading_end_date,
+            created_at::text AS created_at,
+            updated_at::text AS updated_at
+        """,
+        (book_id, DEFAULT_USER_ID, book_id, DEFAULT_USER_ID),
+    )
+    updated_book = cursor.fetchone()
+    if updated_book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return updated_book
 
 def _upsert_series(connection: Any, series_name: str) -> None:
     with connection.cursor() as cursor:
@@ -271,6 +334,219 @@ def update_book(
 
     return book
 
+
+@router.get("/books/{book_id}/progress", response_model=list[ReadingProgressResponse])
+def list_reading_progress(book_id: str) -> list[dict[str, Any]]:
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT 1
+                FROM books
+                WHERE id = %s AND user_id = %s
+                """,
+                (book_id, DEFAULT_USER_ID),
+            )
+            if cursor.fetchone() is None:
+                raise HTTPException(status_code=404, detail="Book not found")
+
+            cursor.execute(
+                """
+                SELECT
+                    id::text AS id,
+                    book_id::text AS book_id,
+                    user_id::text AS user_id,
+                    progress_date::text AS progress_date,
+                    page_number,
+                    created_at::text AS created_at,
+                    updated_at::text AS updated_at
+                FROM reading_progress_entries
+                WHERE book_id = %s AND user_id = %s
+                ORDER BY progress_date DESC, updated_at DESC
+                """,
+                (book_id, DEFAULT_USER_ID),
+            )
+            return cursor.fetchall()
+
+
+@router.post("/books/{book_id}/progress", response_model=BookResponse)
+def record_reading_progress(
+    book_id: str,
+    payload: CreateReadingProgressRequest,
+) -> dict[str, Any]:
+    progress_date = _resolve_progress_date(payload.progress_date)
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT status, pages
+                FROM books
+                WHERE id = %s AND user_id = %s
+                """,
+                (book_id, DEFAULT_USER_ID),
+            )
+            existing_book = cursor.fetchone()
+
+            if existing_book is None:
+                raise HTTPException(status_code=404, detail="Book not found")
+
+            if existing_book["status"] != "reading":
+                raise HTTPException(
+                    status_code=400,
+                    detail="reading progress can only be recorded for books with reading status",
+                )
+
+            total_pages = existing_book["pages"]
+            if total_pages is not None and payload.page_number > total_pages:
+                raise HTTPException(
+                    status_code=400,
+                    detail="page_number must not be greater than pages",
+                )
+
+            cursor.execute(
+                """
+                INSERT INTO reading_progress_entries (
+                    book_id, user_id, progress_date, page_number
+                )
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (book_id, progress_date)
+                DO UPDATE SET
+                    user_id = EXCLUDED.user_id,
+                    page_number = EXCLUDED.page_number
+                """,
+                (book_id, DEFAULT_USER_ID, progress_date, payload.page_number),
+            )
+
+            cursor.execute(
+                """
+                UPDATE books
+                SET currentPage = (
+                    SELECT page_number
+                    FROM reading_progress_entries
+                    WHERE book_id = %s AND user_id = %s
+                    ORDER BY progress_date DESC, updated_at DESC
+                    LIMIT 1
+                )
+                WHERE id = %s AND user_id = %s
+                RETURNING
+                    id::text AS id,
+                    user_id::text AS user_id,
+                    title,
+                    author,
+                    status,
+                    rating,
+                    isbn,
+                    pages,
+                    publisher,
+                    language_code,
+                    cover_url,
+                    series_id,
+                    volume,
+                    genre_id,
+                    age_category,
+                    release_date::text AS release_date,
+                    format,
+                    description,
+                    currentPage AS "currentPage",
+                    reading_start_date::text AS reading_start_date,
+                    reading_end_date::text AS reading_end_date,
+                    created_at::text AS created_at,
+                    updated_at::text AS updated_at
+                """,
+                (book_id, DEFAULT_USER_ID, book_id, DEFAULT_USER_ID),
+            )
+            updated_book = cursor.fetchone()
+
+    if updated_book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    return updated_book
+
+
+@router.put("/books/{book_id}/progress/{progress_id}", response_model=BookResponse)
+def update_reading_progress(
+    book_id: str,
+    progress_id: str,
+    payload: UpdateReadingProgressRequest,
+) -> dict[str, Any]:
+    progress_date = _resolve_progress_date(payload.progress_date)
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT status, pages
+                FROM books
+                WHERE id = %s AND user_id = %s
+                """,
+                (book_id, DEFAULT_USER_ID),
+            )
+            existing_book = cursor.fetchone()
+            if existing_book is None:
+                raise HTTPException(status_code=404, detail="Book not found")
+            if existing_book["status"] != "reading":
+                raise HTTPException(
+                    status_code=400,
+                    detail="reading progress can only be updated for books with reading status",
+                )
+
+            total_pages = existing_book["pages"]
+            if total_pages is not None and payload.page_number > total_pages:
+                raise HTTPException(
+                    status_code=400,
+                    detail="page_number must not be greater than pages",
+                )
+
+            cursor.execute(
+                """
+                SELECT id
+                FROM reading_progress_entries
+                WHERE id = %s AND book_id = %s AND user_id = %s
+                """,
+                (progress_id, book_id, DEFAULT_USER_ID),
+            )
+            if cursor.fetchone() is None:
+                raise HTTPException(status_code=404, detail="Progress entry not found")
+
+            cursor.execute(
+                """
+                DELETE FROM reading_progress_entries
+                WHERE book_id = %s
+                  AND user_id = %s
+                  AND progress_date = %s
+                  AND id <> %s
+                """,
+                (book_id, DEFAULT_USER_ID, progress_date, progress_id),
+            )
+            cursor.execute(
+                """
+                UPDATE reading_progress_entries
+                SET progress_date = %s,
+                    page_number = %s
+                WHERE id = %s AND book_id = %s AND user_id = %s
+                """,
+                (progress_date, payload.page_number, progress_id, book_id, DEFAULT_USER_ID),
+            )
+            return _refresh_book_current_page(cursor, book_id)
+
+
+@router.delete("/books/{book_id}/progress/{progress_id}", response_model=BookResponse)
+def delete_reading_progress(book_id: str, progress_id: str) -> dict[str, Any]:
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM reading_progress_entries
+                WHERE id = %s AND book_id = %s AND user_id = %s
+                RETURNING id
+                """,
+                (progress_id, book_id, DEFAULT_USER_ID),
+            )
+            if cursor.fetchone() is None:
+                raise HTTPException(status_code=404, detail="Progress entry not found")
+
+            return _refresh_book_current_page(cursor, book_id)
 
 @router.delete("/books/{book_id}", status_code=204)
 def delete_book(book_id: str) -> None:

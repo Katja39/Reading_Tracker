@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/book.dart';
+import '../../domain/models/reading_progress_entry.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../widgets/book_form_dialog.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
 part 'book_detail_dialogs.dart';
 part 'book_detail_widgets.dart';
+part 'book_progress_history_page.dart';
 
 class BookDetailResult {
   const BookDetailResult._({this.updatedBook, this.deletedBookId});
@@ -43,6 +45,7 @@ class BookDetailPage extends StatefulWidget {
 
 class _BookDetailPageState extends State<BookDetailPage> {
   late Book _book;
+  late Future<List<ReadingProgressEntry>> _progressFuture;
   bool _isSaving = false;
   String? _errorMessage;
 
@@ -50,8 +53,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
   void initState() {
     super.initState();
     _book = widget.book;
+    _progressFuture = _loadReadingProgress();
   }
 
+  Future<List<ReadingProgressEntry>> _loadReadingProgress() {
+    return widget.repository.fetchReadingProgress(bookId: _book.id);
+  }
+
+  void _refreshReadingProgress() {
+    _progressFuture = _loadReadingProgress();
+  }
   Future<void> _showEditDialog() async {
     final submitted = await showDialog<BookFormResult>(
       context: context,
@@ -419,7 +430,102 @@ class _BookDetailPageState extends State<BookDetailPage> {
       }
     }
   }
+  Future<void> _showUpdateCurrentPageDialog() async {
+    final submitted = await showDialog<_UpdateCurrentPageDialogResult>(
+      context: context,
+      builder: (context) {
+        return _UpdateCurrentPageDialog(
+          initialPage: _book.currentPage,
+          totalPages: _book.pages,
+        );
+      },
+    );
+    if (submitted == null) {
+      return;
+    }
 
+    final submittedPage = submitted.pageNumber;
+    if (submittedPage == null) {
+      setState(() {
+        _errorMessage = 'Current page must be a number.';
+      });
+      return;
+    }
+
+    if (submittedPage < 0) {
+      setState(() {
+        _errorMessage = 'Current page must not be negative.';
+      });
+      return;
+    }
+
+    final totalPages = _book.pages;
+    if (totalPages != null && submittedPage > totalPages) {
+      setState(() {
+        _errorMessage = 'Current page must not exceed total pages.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final updatedBook = await widget.repository.recordReadingProgress(
+        bookId: _book.id,
+        pageNumber: submittedPage,
+        progressDate: submitted.progressDate,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _book = updatedBook;
+        _refreshReadingProgress();
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openReadingProgressHistory() async {
+    final updatedBook = await Navigator.of(context).push<Book?>(
+      MaterialPageRoute<Book?>(
+        builder: (context) => _BookProgressHistoryPage(
+          book: _book,
+          repository: widget.repository,
+          onBookChanged: (book) {
+            _book = book;
+          },
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      if (updatedBook != null) {
+        _book = updatedBook;
+      }
+      _refreshReadingProgress();
+    });
+  }
   Future<void> _confirmDelete() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -617,6 +723,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
                               status: _formatReadableLabel(_book.status),
                               onPressed: _isSaving ? null : _showEditStatusDialog,
                             ),
+                            if (_book.status == 'reading') ...[
+                              const SizedBox(height: 10),
+                              _BookReadingProgress(
+                                currentPage: _book.currentPage,
+                                pages: _book.pages,
+                                progressFuture: _progressFuture,
+                                onUpdatePressed: _isSaving
+                                    ? null
+                                    : _showUpdateCurrentPageDialog,
+                                onHistoryPressed: _openReadingProgressHistory,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -628,6 +746,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         children: [
                           if (_hasDescription)
                             _BookDetailRow(
+                              //TODO trim description, clickable "more"/"less"
                               label: 'Description',
                               value: _descriptionDisplayValue,
                             ),
@@ -647,11 +766,6 @@ class _BookDetailPageState extends State<BookDetailPage> {
                             label: 'Pages',
                             value: _book.pages?.toString() ?? '-',
                           ),
-                          if (_book.status == 'reading')
-                            _BookDetailRow(
-                              label: 'Current page',
-                              value: _book.currentPage?.toString() ?? '-',
-                            ),
                         ],
                       ),
                       if (_hasSeries) ...[

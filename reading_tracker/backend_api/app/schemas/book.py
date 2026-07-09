@@ -71,3 +71,21 @@ class BookResponse(BaseModel):
     updated_at: str | None
 
 
+class CreateReadingProgressRequest(BaseModel):
+    page_number: int = Field(ge=0, le=100000)
+    progress_date: str | None = Field(default=None, max_length=10)
+
+
+class UpdateReadingProgressRequest(BaseModel):
+    page_number: int = Field(ge=0, le=100000)
+    progress_date: str = Field(min_length=10, max_length=10)
+
+
+class ReadingProgressResponse(BaseModel):
+    id: str
+    book_id: str
+    user_id: str
+    progress_date: str
+    page_number: int
+    created_at: str | None
+    updated_at: str | None

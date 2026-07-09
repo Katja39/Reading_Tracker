@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../domain/models/book.dart';
+import '../../domain/models/reading_progress_entry.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../../../metadata/domain/models/book_enrichment.dart';
 
@@ -245,6 +246,77 @@ class ApiBookRepository implements BookRepository {
         readingEndDate: readingEndDate,
       );
     }
+  }
+
+  @override
+  Future<Book> recordReadingProgress({
+    required String bookId,
+    required int pageNumber,
+    String? progressDate,
+  }) async {
+    final payload = <String, dynamic>{
+      'page_number': pageNumber,
+    };
+    if (progressDate != null) {
+      payload['progress_date'] = progressDate;
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/books/$bookId/progress'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    );
+    _throwIfError(response);
+
+    return Book.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<ReadingProgressEntry>> fetchReadingProgress({
+    required String bookId,
+  }) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl/books/$bookId/progress'),
+    );
+    _throwIfError(response);
+
+    final jsonList = jsonDecode(response.body) as List<dynamic>;
+    return jsonList
+        .map((item) => ReadingProgressEntry.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<Book> updateReadingProgress({
+    required String bookId,
+    required String progressId,
+    required int pageNumber,
+    required String progressDate,
+  }) async {
+    final response = await _client.put(
+      Uri.parse('$baseUrl/books/$bookId/progress/$progressId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'page_number': pageNumber,
+        'progress_date': progressDate,
+      }),
+    );
+    _throwIfError(response);
+
+    return Book.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  @override
+  Future<Book> deleteReadingProgress({
+    required String bookId,
+    required String progressId,
+  }) async {
+    final response = await _client.delete(
+      Uri.parse('$baseUrl/books/$bookId/progress/$progressId'),
+    );
+    _throwIfError(response);
+
+    return Book.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   @override

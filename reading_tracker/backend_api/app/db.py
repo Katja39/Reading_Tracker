@@ -98,6 +98,40 @@ def ensure_schema(connection: psycopg.Connection) -> None:
         EXECUTE FUNCTION set_books_updated_at()
         """,
         """
+        CREATE TABLE IF NOT EXISTS reading_progress_entries (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            progress_date DATE NOT NULL,
+            page_number INTEGER NOT NULL CHECK (page_number >= 0),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            CONSTRAINT reading_progress_entries_book_date_unique UNIQUE (book_id, progress_date)
+        )
+        """,
+        """
+        CREATE OR REPLACE FUNCTION set_reading_progress_entries_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """,
+        """
+        DROP TRIGGER IF EXISTS trg_reading_progress_entries_updated_at ON reading_progress_entries
+        """,
+        """
+        CREATE TRIGGER trg_reading_progress_entries_updated_at
+        BEFORE UPDATE ON reading_progress_entries
+        FOR EACH ROW
+        EXECUTE FUNCTION set_reading_progress_entries_updated_at()
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_reading_progress_entries_book_date
+        ON reading_progress_entries(book_id, progress_date DESC)
+        """,
+        """
         CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id)
         """,
         """

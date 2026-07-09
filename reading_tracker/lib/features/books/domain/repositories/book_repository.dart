@@ -1,4 +1,5 @@
 import '../models/book.dart';
+import '../models/reading_progress_entry.dart';
 import '../../../metadata/domain/models/book_enrichment.dart';
 
 abstract class BookRepository {
@@ -48,6 +49,28 @@ abstract class BookRepository {
     int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
+  });
+
+  Future<Book> recordReadingProgress({
+    required String bookId,
+    required int pageNumber,
+    String? progressDate,
+  });
+
+  Future<List<ReadingProgressEntry>> fetchReadingProgress({
+    required String bookId,
+  });
+
+  Future<Book> updateReadingProgress({
+    required String bookId,
+    required String progressId,
+    required int pageNumber,
+    required String progressDate,
+  });
+
+  Future<Book> deleteReadingProgress({
+    required String bookId,
+    required String progressId,
   });
 
   Future<void> deleteBook({

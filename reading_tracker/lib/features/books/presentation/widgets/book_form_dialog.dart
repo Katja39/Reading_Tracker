@@ -951,14 +951,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
               ),
               const SizedBox(height: 16),
               if (_selectedStatus == 'reading') ...[
-                TextField(
-                  controller: _currentPageController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Current page (optional)',
-                  ),
-                ),
-                const SizedBox(height: 16),
+                //
               ],
               TextField(
                 controller: _descriptionController,
