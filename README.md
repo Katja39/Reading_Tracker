@@ -10,6 +10,8 @@ Android and browser compatible
 - Book metadata fields for title, author, status, rating, ISBN, pages,
   publisher, language, cover image, series, volume, genre, age category,
   release date, format, and description
+- Daily page tracking for books currently being read
+- Reading progress display based on pages read
 - Set reading status
 - Ratings for read books
 - ISBN autofill through the backend using Open Library metadata
@@ -21,8 +23,6 @@ Android and browser compatible
 
 ## Upcoming Functionality
 
-- Daily page tracking for books currently being read
-- Reading progress display based on pages read
 - Statistics dashboard for yearly reading totals, goals,
   spending, and visual charts
 - CSV import and export, including Goodreads import support

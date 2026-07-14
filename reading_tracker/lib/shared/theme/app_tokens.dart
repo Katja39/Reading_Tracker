@@ -1,5 +1,6 @@
+//
 // Shared design tokens for spacing, radii, sizes, insets, and layout widths
-
+//
 
 
 import 'package:flutter/material.dart';
@@ -36,9 +37,6 @@ class AppSizes {
   static const compactProgressMaxWidth = 128.0;
   static const buttonHeight = 36.0;
   static const compactButtonHeight = 30.0;
-  static const homeReadingCardWidthLarge = 360.0;
-  static const homeReadingCardWidthMedium = 330.0;
-  static const homeReadingCardWidthSmall = 300.0;
   static const homeReadingCoverWidthLarge = 96.0;
   static const homeReadingCoverWidthMedium = 90.0;
   static const homeReadingCoverWidthSmall = 84.0;

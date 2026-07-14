@@ -31,10 +31,9 @@ extension _LibraryPageHomeSection on _LibraryPageState {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final cardWidth = _homeBookCardWidth(constraints.maxWidth);
                   final coverWidth = _homeBookCoverWidth(constraints.maxWidth);
                   final coverHeight = coverWidth * 1.42;
-                  final listHeight = coverHeight + 8;
+                  final listHeight = coverHeight + AppSpacing.xl;
 
                   return SizedBox(
                     height: listHeight,
@@ -54,12 +53,11 @@ extension _LibraryPageHomeSection on _LibraryPageState {
                                 scrollDirection: Axis.horizontal,
                                 itemCount: readingBooks.length,
                                 separatorBuilder: (_, _) =>
-                                    const SizedBox(width: 14),
+                                    const SizedBox(width: AppSpacing.lg),
                                 itemBuilder: (context, index) {
                                   return _buildCurrentlyReadingCard(
                                     theme,
                                     readingBooks[index],
-                                    width: cardWidth,
                                     coverWidth: coverWidth,
                                     coverHeight: coverHeight,
                                   );
@@ -150,16 +148,6 @@ extension _LibraryPageHomeSection on _LibraryPageState {
       }
     }
   }
-  // Chooses a responsive card width for the home carousel
-  double _homeBookCardWidth(double availableWidth) {
-    if (availableWidth >= 900) {
-      return AppSizes.homeReadingCardWidthLarge;
-    }
-    if (availableWidth >= 600) {
-      return AppSizes.homeReadingCardWidthMedium;
-    }
-    return AppSizes.homeReadingCardWidthSmall;
-  }
 
   // Chooses a responsive cover width for the home carousel
   double _homeBookCoverWidth(double availableWidth) {
@@ -176,63 +164,63 @@ extension _LibraryPageHomeSection on _LibraryPageState {
   Widget _buildCurrentlyReadingCard(
     ThemeData theme,
     Book book, {
-    required double width,
     required double coverWidth,
     required double coverHeight,
   }) {
-    return SizedBox(
-      width: width,
-      child: InkWell(
-        onTap: () => _openBookDetails(book),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xs),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBookCover(
-                book,
-                width: coverWidth,
-                height: coverHeight,
-                borderRadius: AppRadii.sm,
+    return InkWell(
+      onTap: () => _openBookDetails(book),
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildBookCover(
+              book,
+              width: coverWidth,
+              height: coverHeight,
+              borderRadius: AppRadii.sm,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppSizes.compactProgressMaxWidth,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                      style: theme.textTheme.labelLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    book.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      book.author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const Spacer(),
-                    ReadingProgressSummary(
-                      currentPage: book.currentPage,
-                      pages: book.pages,
-                      onUpdatePressed: _isSaving
-                          ? null
-                          : () => _showHomeUpdateCurrentPageDialog(book),
-                      compact: true,
-                      minBarWidth: AppSizes.compactProgressMinWidth,
-                      maxBarWidth: AppSizes.compactProgressMaxWidth,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ReadingProgressSummary(
+                    currentPage: book.currentPage,
+                    pages: book.pages,
+                    onUpdatePressed: _isSaving
+                        ? null
+                        : () => _showHomeUpdateCurrentPageDialog(book),
+                    compact: true,
+                    minBarWidth: AppSizes.compactProgressMinWidth,
+                    maxBarWidth: AppSizes.compactProgressMaxWidth,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
