@@ -1,6 +1,6 @@
-part of 'book_page.dart';
+part of 'library_page.dart';
 
-extension _BookPageStatisticsSection on _BookPageState {
+extension _LibraryPageStatisticsSection on _LibraryPageState {
   Widget _buildStatisticsTab(ThemeData theme) {
     return Center(
       child: Text(

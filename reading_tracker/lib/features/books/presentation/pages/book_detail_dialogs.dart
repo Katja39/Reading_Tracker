@@ -1,5 +1,9 @@
+// Dialog helpers used by BookDetailPage for editing book metadata and ratings
+
+
 part of 'book_detail_page.dart';
 
+// Wraps the shared book form with the current book as initial data
 class _EditBookDialog extends StatelessWidget {
   const _EditBookDialog({
     required this.book,
@@ -23,12 +27,14 @@ class _EditBookDialog extends StatelessWidget {
   }
 }
 
+// Return value for the rating dialog
 class _EditRatingDialogResult {
   const _EditRatingDialogResult({required this.rating});
 
   final double? rating;
 }
 
+// Star rating or clear the existing rating
 class _EditRatingDialog extends StatefulWidget {
   const _EditRatingDialog({required this.initialRating});
 
@@ -47,6 +53,7 @@ class _EditRatingDialogState extends State<_EditRatingDialog> {
     _selectedRating = widget.initialRating;
   }
 
+  // Closes dialog with the currently selected rating value
   void _submit() {
     Navigator.of(context).pop(_EditRatingDialogResult(rating: _selectedRating));
   }

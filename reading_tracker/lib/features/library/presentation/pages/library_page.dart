@@ -4,12 +4,15 @@ import '../../../books/domain/models/book.dart';
 import '../../../books/domain/repositories/book_repository.dart';
 import '../../../books/presentation/pages/book_detail_page.dart';
 import '../../../books/presentation/widgets/book_form_dialog.dart';
+import '../../../books/presentation/widgets/reading_progress_summary.dart';
+import '../../../books/presentation/widgets/reading_progress_update_dialog.dart';
+import '../../../../shared/theme/app_tokens.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
-part 'book_page_dialog.dart';
-part 'home_page_section.dart';
-part 'book_page_section.dart';
-part 'statistics_page_section.dart';
+part 'library_dialogs.dart';
+part 'library_home_section.dart';
+part 'library_section.dart';
+part 'library_statistics_section.dart';
 
 enum _LibraryField {
   title,
@@ -35,8 +38,8 @@ enum _LibraryControlPanel {
   display,
 }
 
-class BookPage extends StatefulWidget {
-  const BookPage({
+class LibraryPage extends StatefulWidget {
+  const LibraryPage({
     super.key,
     required this.repository,
     required this.themeMode,
@@ -48,10 +51,10 @@ class BookPage extends StatefulWidget {
   final VoidCallback onToggleThemeMode;
 
   @override
-  State<BookPage> createState() => _BookPageState();
+  State<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _BookPageState extends State<BookPage> {
+class _LibraryPageState extends State<LibraryPage> {
   static const _menuActionSortFilter = 'sort_filter';
   static const _menuActionResetFilter = 'reset_filter';
   static const _maxMobileInfoColumns = 6;

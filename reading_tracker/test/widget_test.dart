@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reading_tracker/app.dart';
 import 'package:reading_tracker/features/books/domain/models/book.dart';
+import 'package:reading_tracker/features/books/domain/models/reading_progress_entry.dart';
 import 'package:reading_tracker/features/books/domain/repositories/book_repository.dart';
 import 'package:reading_tracker/features/metadata/domain/models/book_enrichment.dart';
 
@@ -647,6 +648,46 @@ class FakeBookRepository implements BookRepository {
       readingStartDate: readingStartDate,
       readingEndDate: readingEndDate,
     );
+  }
+
+  @override
+  Future<Book> recordReadingProgress({
+    required String bookId,
+    required int pageNumber,
+    String? progressDate,
+  }) async {
+    return Book(
+      id: bookId,
+      userId: 'user-1',
+      title: 'Alpha Book',
+      author: 'Author A',
+      status: 'reading',
+      rating: 4,
+      pages: 321,
+      currentPage: pageNumber,
+    );
+  }
+
+  @override
+  Future<List<ReadingProgressEntry>> fetchReadingProgress({
+    required String bookId,
+  }) async {
+    return const [
+      ReadingProgressEntry(
+        id: 'progress-1',
+        bookId: 'book-1',
+        userId: 'user-1',
+        progressDate: '2026-07-09',
+        pageNumber: 87,
+      ),
+      ReadingProgressEntry(
+        id: 'progress-2',
+        bookId: 'book-1',
+        userId: 'user-1',
+        progressDate: '2026-07-08',
+        pageNumber: 42,
+      ),
+    ];
   }
 
   @override

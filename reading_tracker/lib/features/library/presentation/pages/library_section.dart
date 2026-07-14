@@ -1,6 +1,6 @@
-part of 'book_page.dart';
+part of 'library_page.dart';
 
-extension _BookPageSections on _BookPageState {
+extension _LibraryPageSections on _LibraryPageState {
   int _maxVariableColumns(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= 1550) {
@@ -19,21 +19,7 @@ extension _BookPageSections on _BookPageState {
   }
 
   double _responsiveContentWidth(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    if (screenWidth >= 1600) {
-      return 1360;
-    }
-    if (screenWidth >= 1300) {
-      return 1120;
-    }
-    if (screenWidth >= 1000) {
-      return 920;
-    }
-    if (screenWidth >= 800) {
-      return 760;
-    }
-    return screenWidth;
+    return AppLayout.libraryContentWidth(context);
   }
 
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
@@ -175,23 +161,23 @@ extension _BookPageSections on _BookPageState {
         PopupMenuButton<String>(
           tooltip: 'Sort and filter',
           onSelected: (value) {
-            if (value == _BookPageState._menuActionSortFilter) {
+            if (value == _LibraryPageState._menuActionSortFilter) {
               _openSortFilterSheet(
                 theme,
                 isMobile: false,
                 panel: _LibraryControlPanel.sort,
               );
-            } else if (value == _BookPageState._menuActionResetFilter) {
+            } else if (value == _LibraryPageState._menuActionResetFilter) {
               _resetSortAndFilter();
             }
           },
           itemBuilder: (_) => const [
             PopupMenuItem<String>(
-              value: _BookPageState._menuActionSortFilter,
+              value: _LibraryPageState._menuActionSortFilter,
               child: Text('Sort / Filter / Display'),
             ),
             PopupMenuItem<String>(
-              value: _BookPageState._menuActionResetFilter,
+              value: _LibraryPageState._menuActionResetFilter,
               child: Text('Reset'),
             ),
           ],

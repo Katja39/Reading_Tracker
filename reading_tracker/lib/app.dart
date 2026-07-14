@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'features/books/domain/repositories/book_repository.dart';
-import 'features/library/presentation/pages/book_page.dart';
+import 'features/library/presentation/pages/library_page.dart';
 import 'shared/theme/app_theme.dart';
 
 class _AppScrollBehavior extends MaterialScrollBehavior {
@@ -48,7 +48,7 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
-      home: BookPage(
+      home: LibraryPage(
         repository: widget.repository,
         themeMode: _themeMode,
         onToggleThemeMode: _toggleThemeMode,

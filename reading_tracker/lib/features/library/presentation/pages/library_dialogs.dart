@@ -1,4 +1,4 @@
-part of 'book_page.dart';
+part of 'library_page.dart';
 
 class _AddBookDialog extends StatelessWidget {
   const _AddBookDialog({

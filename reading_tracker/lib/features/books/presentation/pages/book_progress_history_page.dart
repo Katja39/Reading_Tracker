@@ -1,5 +1,10 @@
+// Progress history page for viewing, editing, and deleting dated reading entries
+
+
+
 part of 'book_detail_page.dart';
 
+// Screen used from the detail page to manage individual progress entries
 class _BookProgressHistoryPage extends StatefulWidget {
   const _BookProgressHistoryPage({
     required this.book,
@@ -16,6 +21,7 @@ class _BookProgressHistoryPage extends StatefulWidget {
       _BookProgressHistoryPageState();
 }
 
+// Owns the loaded progress list, save state, and latest updated book result
 class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
   late Future<List<ReadingProgressEntry>> _progressFuture;
   Book? _updatedBook;
@@ -27,16 +33,19 @@ class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
     _progressFuture = _loadProgress();
   }
 
+  // Loads all progress entries for the selected book
   Future<List<ReadingProgressEntry>> _loadProgress() {
     return widget.repository.fetchReadingProgress(bookId: widget.book.id);
   }
 
+  // Replaces the progress future to trigger a list refresh
   void _reload() {
     setState(() {
       _progressFuture = _loadProgress();
     });
   }
 
+  // Formats backend dates for list subtitles and delete confirmation
   String _formatDate(String value) {
     final parts = value.split('-');
     if (parts.length != 3) {
@@ -45,6 +54,7 @@ class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
     return '${parts[2]}.${parts[1]}.${parts[0]}';
   }
 
+  // Reports repository errors without leaving the history screen
   void _showError(Object error) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -53,6 +63,7 @@ class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
       );
   }
 
+  // Validates the page number
   String? _validateProgressPage(int? pageNumber) {
     if (pageNumber == null) {
       return 'Current page must be a number.';
@@ -69,11 +80,12 @@ class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
     return null;
   }
 
+  // Opens the progress dialog for one entry and persists edited page/date data
   Future<void> _editEntry(ReadingProgressEntry entry) async {
-    final submitted = await showDialog<_UpdateCurrentPageDialogResult>(
+    final submitted = await showDialog<ReadingProgressUpdateResult>(
       context: context,
       builder: (context) {
-        return _UpdateCurrentPageDialog(
+        return ReadingProgressUpdateDialog(
           initialPage: entry.pageNumber,
           totalPages: widget.book.pages,
           initialProgressDate: entry.progressDate,
@@ -122,6 +134,7 @@ class _BookProgressHistoryPageState extends State<_BookProgressHistoryPage> {
     }
   }
 
+  // Confirms and deletes one progress entry, then refreshes parent book state
   Future<void> _deleteEntry(ReadingProgressEntry entry) async {
     final shouldDelete = await showDialog<bool>(
       context: context,

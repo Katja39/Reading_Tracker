@@ -1,15 +1,20 @@
+// Book detail screen for viewing, editing, deleting, rating and tracking a single book
 import 'package:flutter/material.dart';
 
 import '../../domain/models/book.dart';
 import '../../domain/models/reading_progress_entry.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../widgets/book_form_dialog.dart';
+import '../widgets/reading_progress_summary.dart';
+import '../widgets/reading_progress_update_dialog.dart';
+import '../../../../shared/theme/app_tokens.dart';
 import '../../../../shared/widgets/error_banner.dart';
 
 part 'book_detail_dialogs.dart';
 part 'book_detail_widgets.dart';
 part 'book_progress_history_page.dart';
 
+// Navigation result returned to the library when a book is updated or deleted
 class BookDetailResult {
   const BookDetailResult._({this.updatedBook, this.deletedBookId});
 
@@ -27,6 +32,7 @@ class BookDetailResult {
   }
 }
 
+// Displays all detail data for one book
 class BookDetailPage extends StatefulWidget {
   const BookDetailPage({
     super.key,
@@ -43,6 +49,7 @@ class BookDetailPage extends StatefulWidget {
   State<BookDetailPage> createState() => _BookDetailPageState();
 }
 
+// Owns the editable book snapshot and async reading progress state for the page
 class _BookDetailPageState extends State<BookDetailPage> {
   late Book _book;
   late Future<List<ReadingProgressEntry>> _progressFuture;
@@ -56,13 +63,17 @@ class _BookDetailPageState extends State<BookDetailPage> {
     _progressFuture = _loadReadingProgress();
   }
 
+  // Loads reading progress history
   Future<List<ReadingProgressEntry>> _loadReadingProgress() {
     return widget.repository.fetchReadingProgress(bookId: _book.id);
   }
 
+  // Recreates the progress future after progress entries are created or changed
   void _refreshReadingProgress() {
     _progressFuture = _loadReadingProgress();
   }
+
+  // Opens the book edit form, validates the result, persists it, and updates local state
   Future<void> _showEditDialog() async {
     final submitted = await showDialog<BookFormResult>(
       context: context,
@@ -199,6 +210,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
   }
 
+  // Updates the rating and promotes the book to 'read' when a rating is selected
   Future<void> _showEditRatingDialog() async {
     final submitted = await showDialog<_EditRatingDialogResult>(
       context: context,
@@ -300,6 +312,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
   }
 
+  // Change reading status while clearing incompatible rating/page fields
   Future<void> _showEditStatusDialog() async {
     var selectedStatus = _book.status;
     final submitted = await showDialog<String>(
@@ -430,11 +443,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
       }
     }
   }
+
+  // Records a dated reading progress entry and refreshes the displayed progress
   Future<void> _showUpdateCurrentPageDialog() async {
-    final submitted = await showDialog<_UpdateCurrentPageDialogResult>(
+    final submitted = await showDialog<ReadingProgressUpdateResult>(
       context: context,
       builder: (context) {
-        return _UpdateCurrentPageDialog(
+        return ReadingProgressUpdateDialog(
           initialPage: _book.currentPage,
           totalPages: _book.pages,
         );
@@ -504,6 +519,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
   }
 
+  // Opens the progress history screen
   Future<void> _openReadingProgressHistory() async {
     final updatedBook = await Navigator.of(context).push<Book?>(
       MaterialPageRoute<Book?>(
@@ -526,6 +542,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
       _refreshReadingProgress();
     });
   }
+
+  // Confirms deletion and returns a delete result to the parent page
   Future<void> _confirmDelete() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -581,10 +599,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
   }
 
+  // Returns the latest local book snapshot when leaving the detail page
   void _closePage() {
     Navigator.of(context).pop(BookDetailResult.updated(_book));
   }
 
+  // Converts stored values into display labels
   String _formatReadableLabel(String? value) {
     if (value == null || value.isEmpty) {
       return '-';
@@ -596,6 +616,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         .join(' ');
   }
 
+  // Whether a non empty trimmed description should be rendered
   bool get _hasDescription {
     return _book.description != null && _book.description!.trim().isNotEmpty;
   }
@@ -608,6 +629,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     return _book.seriesId != null && _book.seriesId!.isNotEmpty;
   }
 
+  // Formats the series name and volume for the header area
   String get _seriesDisplayValue {
     if (!_hasSeries) {
       return '';
@@ -617,19 +639,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
     }
     return '${_book.seriesId!} · Vol. ${_book.volume}';
   }
-  double _responsiveContentWidth(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
 
-    if (screenWidth >= 1600) {
-      return 1100;
-    }
-    if (screenWidth >= 1200) {
-      return 920;
-    }
-    if (screenWidth >= 900) {
-      return 760;
-    }
-    return screenWidth;
+  // Keeps the detail card readable across phone, tablet, and desktop widths
+  double _responsiveContentWidth(BuildContext context) {
+    return AppLayout.detailContentWidth(context);
   }
 
   @override
@@ -745,8 +758,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         title: 'Book info',
                         children: [
                           if (_hasDescription)
-                            _BookDetailRow(
-                              //TODO trim description, clickable "more"/"less"
+                            _ExpandableBookDetailRow(
                               label: 'Description',
                               value: _descriptionDisplayValue,
                             ),
@@ -819,20 +831,3 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
