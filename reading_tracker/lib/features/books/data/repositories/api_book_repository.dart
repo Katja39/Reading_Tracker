@@ -48,6 +48,15 @@ class ApiBookRepository implements BookRepository {
     int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
+    String? howAcquired,
+    String? whereAcquired,
+    String? authorOriginId,
+    String? authorGender,
+    String? acquiredOn,
+    double? price,
+    String? notes,
+    int? totalReadingMinutes,
+    int? firstPublishYear,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -99,6 +108,33 @@ class ApiBookRepository implements BookRepository {
     }
     if (readingEndDate != null) {
       payload['reading_end_date'] = readingEndDate;
+    }
+    if (howAcquired != null) {
+      payload['how_acquired'] = howAcquired;
+    }
+    if (whereAcquired != null) {
+      payload['where_acquired'] = whereAcquired;
+    }
+    if (authorOriginId != null) {
+      payload['author_origin_id'] = authorOriginId;
+    }
+    if (authorGender != null) {
+      payload['author_gender'] = authorGender;
+    }
+    if (acquiredOn != null) {
+      payload['acquired_on'] = acquiredOn;
+    }
+    if (price != null) {
+      payload['price'] = price;
+    }
+    if (notes != null) {
+      payload['notes'] = notes;
+    }
+    if (totalReadingMinutes != null) {
+      payload['total_reading_minutes'] = totalReadingMinutes;
+    }
+    if (firstPublishYear != null) {
+      payload['first_publish_year'] = firstPublishYear;
     }
     final response = await _client.post(
       Uri.parse('$baseUrl/books'),
@@ -133,6 +169,15 @@ class ApiBookRepository implements BookRepository {
     int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
+    String? howAcquired,
+    String? whereAcquired,
+    String? authorOriginId,
+    String? authorGender,
+    String? acquiredOn,
+    double? price,
+    String? notes,
+    int? totalReadingMinutes,
+    int? firstPublishYear,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
@@ -185,6 +230,33 @@ class ApiBookRepository implements BookRepository {
     if (readingEndDate != null) {
       payload['reading_end_date'] = readingEndDate;
     }
+    if (howAcquired != null) {
+      payload['how_acquired'] = howAcquired;
+    }
+    if (whereAcquired != null) {
+      payload['where_acquired'] = whereAcquired;
+    }
+    if (authorOriginId != null) {
+      payload['author_origin_id'] = authorOriginId;
+    }
+    if (authorGender != null) {
+      payload['author_gender'] = authorGender;
+    }
+    if (acquiredOn != null) {
+      payload['acquired_on'] = acquiredOn;
+    }
+    if (price != null) {
+      payload['price'] = price;
+    }
+    if (notes != null) {
+      payload['notes'] = notes;
+    }
+    if (totalReadingMinutes != null) {
+      payload['total_reading_minutes'] = totalReadingMinutes;
+    }
+    if (firstPublishYear != null) {
+      payload['first_publish_year'] = firstPublishYear;
+    }
     final response = await _client.put(
       Uri.parse('$baseUrl/books/$id'),
       headers: {'Content-Type': 'application/json'},
@@ -216,6 +288,15 @@ class ApiBookRepository implements BookRepository {
         currentPage: status == 'reading' ? currentPage : null,
         readingStartDate: readingStartDate,
         readingEndDate: readingEndDate,
+        howAcquired: howAcquired,
+        whereAcquired: whereAcquired,
+        authorOriginId: authorOriginId,
+        authorGender: authorGender,
+        acquiredOn: acquiredOn,
+        price: price,
+        notes: notes,
+        totalReadingMinutes: totalReadingMinutes,
+        firstPublishYear: firstPublishYear,
       );
     }
 
@@ -244,6 +325,15 @@ class ApiBookRepository implements BookRepository {
         currentPage: status == 'reading' ? currentPage : null,
         readingStartDate: readingStartDate,
         readingEndDate: readingEndDate,
+        howAcquired: howAcquired,
+        whereAcquired: whereAcquired,
+        authorOriginId: authorOriginId,
+        authorGender: authorGender,
+        acquiredOn: acquiredOn,
+        price: price,
+        notes: notes,
+        totalReadingMinutes: totalReadingMinutes,
+        firstPublishYear: firstPublishYear,
       );
     }
   }

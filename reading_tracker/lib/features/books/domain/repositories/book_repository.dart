@@ -25,6 +25,15 @@ abstract class BookRepository {
     int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
+    String? howAcquired,
+    String? whereAcquired,
+    String? authorOriginId,
+    String? authorGender,
+    String? acquiredOn,
+    double? price,
+    String? notes,
+    int? totalReadingMinutes,
+    int? firstPublishYear,
   });
 
   Future<Book> updateBook({
@@ -49,6 +58,15 @@ abstract class BookRepository {
     int? currentPage,
     String? readingStartDate,
     String? readingEndDate,
+    String? howAcquired,
+    String? whereAcquired,
+    String? authorOriginId,
+    String? authorGender,
+    String? acquiredOn,
+    double? price,
+    String? notes,
+    int? totalReadingMinutes,
+    int? firstPublishYear,
   });
 
   Future<Book> recordReadingProgress({

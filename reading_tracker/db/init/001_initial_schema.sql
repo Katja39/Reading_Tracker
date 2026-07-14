@@ -26,6 +26,15 @@ CREATE TABLE IF NOT EXISTS books (
     currentPage INTEGER,
     reading_start_date DATE,
     reading_end_date DATE,
+    how_acquired TEXT,
+    where_acquired TEXT,
+    author_origin_id TEXT,
+    author_gender TEXT,
+    acquired_on DATE,
+    price NUMERIC(10, 2),
+    notes TEXT,
+    total_reading_minutes INTEGER,
+    first_publish_year INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -63,6 +72,15 @@ ALTER TABLE books
     ADD COLUMN IF NOT EXISTS description TEXT,
     ADD COLUMN IF NOT EXISTS reading_start_date DATE,
     ADD COLUMN IF NOT EXISTS reading_end_date DATE,
+    ADD COLUMN IF NOT EXISTS how_acquired TEXT,
+    ADD COLUMN IF NOT EXISTS where_acquired TEXT,
+    ADD COLUMN IF NOT EXISTS author_origin_id TEXT,
+    ADD COLUMN IF NOT EXISTS author_gender TEXT,
+    ADD COLUMN IF NOT EXISTS acquired_on DATE,
+    ADD COLUMN IF NOT EXISTS price NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS notes TEXT,
+    ADD COLUMN IF NOT EXISTS total_reading_minutes INTEGER,
+    ADD COLUMN IF NOT EXISTS first_publish_year INTEGER,
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 

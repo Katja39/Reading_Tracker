@@ -21,6 +21,15 @@ class CreateBookRequest(BaseModel):
     currentPage: int | None = Field(default=None, ge=1, le=100000)
     reading_start_date: str | None = Field(default=None, max_length=10)
     reading_end_date: str | None = Field(default=None, max_length=10)
+    how_acquired: str | None = Field(default=None, max_length=100)
+    where_acquired: str | None = Field(default=None, max_length=255)
+    author_origin_id: str | None = Field(default=None, max_length=255)
+    author_gender: str | None = Field(default=None, max_length=50)
+    acquired_on: str | None = Field(default=None, max_length=10)
+    price: float | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=10000)
+    total_reading_minutes: int | None = Field(default=None, ge=0, le=10000000)
+    first_publish_year: int | None = Field(default=None, ge=0, le=9999)
 
 
 class UpdateBookRequest(BaseModel):
@@ -43,6 +52,15 @@ class UpdateBookRequest(BaseModel):
     currentPage: int | None = Field(default=None, ge=1, le=100000)
     reading_start_date: str | None = Field(default=None, max_length=10)
     reading_end_date: str | None = Field(default=None, max_length=10)
+    how_acquired: str | None = Field(default=None, max_length=100)
+    where_acquired: str | None = Field(default=None, max_length=255)
+    author_origin_id: str | None = Field(default=None, max_length=255)
+    author_gender: str | None = Field(default=None, max_length=50)
+    acquired_on: str | None = Field(default=None, max_length=10)
+    price: float | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=10000)
+    total_reading_minutes: int | None = Field(default=None, ge=0, le=10000000)
+    first_publish_year: int | None = Field(default=None, ge=0, le=9999)
 
 
 class BookResponse(BaseModel):
@@ -67,6 +85,15 @@ class BookResponse(BaseModel):
     currentPage: int | None
     reading_start_date: str | None
     reading_end_date: str | None
+    how_acquired: str | None
+    where_acquired: str | None
+    author_origin_id: str | None
+    author_gender: str | None
+    acquired_on: str | None
+    price: float | None
+    notes: str | None
+    total_reading_minutes: int | None
+    first_publish_year: int | None
     created_at: str | None
     updated_at: str | None
 

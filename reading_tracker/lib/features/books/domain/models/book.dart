@@ -21,6 +21,15 @@ class Book {
     this.currentPage,
     this.readingStartDate,
     this.readingEndDate,
+    this.howAcquired,
+    this.whereAcquired,
+    this.authorOriginId,
+    this.authorGender,
+    this.acquiredOn,
+    this.price,
+    this.notes,
+    this.totalReadingMinutes,
+    this.firstPublishYear,
     this.createdAt,
     this.updatedAt,
   });
@@ -46,6 +55,15 @@ class Book {
   final int? currentPage;
   final String? readingStartDate;
   final String? readingEndDate;
+  final String? howAcquired;
+  final String? whereAcquired;
+  final String? authorOriginId;
+  final String? authorGender;
+  final String? acquiredOn;
+  final double? price;
+  final String? notes;
+  final int? totalReadingMinutes;
+  final int? firstPublishYear;
   final String? createdAt;
   final String? updatedAt;
 
@@ -54,6 +72,9 @@ class Book {
     final pagesValue = json['pages'];
     final volumeValue = json['volume'];
     final currentPageValue = json['currentPage'];
+    final priceValue = json['price'];
+    final totalReadingMinutesValue = json['total_reading_minutes'];
+    final firstPublishYearValue = json['first_publish_year'];
     return Book(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -76,6 +97,19 @@ class Book {
       currentPage: currentPageValue is num ? currentPageValue.toInt() : null,
       readingStartDate: json['reading_start_date'] as String?,
       readingEndDate: json['reading_end_date'] as String?,
+      howAcquired: json['how_acquired'] as String?,
+      whereAcquired: json['where_acquired'] as String?,
+      authorOriginId: json['author_origin_id'] as String?,
+      authorGender: json['author_gender'] as String?,
+      acquiredOn: json['acquired_on'] as String?,
+      price: priceValue is num ? priceValue.toDouble() : null,
+      notes: json['notes'] as String?,
+      totalReadingMinutes: totalReadingMinutesValue is num
+          ? totalReadingMinutesValue.toInt()
+          : null,
+      firstPublishYear: firstPublishYearValue is num
+          ? firstPublishYearValue.toInt()
+          : null,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
     );

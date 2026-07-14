@@ -21,6 +21,41 @@ from ..services.normalizers import (
 
 router = APIRouter()
 
+_BOOK_RESPONSE_COLUMNS = """
+id::text AS id,
+user_id::text AS user_id,
+title,
+author,
+status,
+rating,
+isbn,
+pages,
+publisher,
+language_code,
+cover_url,
+series_id,
+volume,
+genre_id,
+age_category,
+release_date::text AS release_date,
+format,
+description,
+currentPage AS "currentPage",
+reading_start_date::text AS reading_start_date,
+reading_end_date::text AS reading_end_date,
+how_acquired,
+where_acquired,
+author_origin_id,
+author_gender,
+acquired_on::text AS acquired_on,
+price,
+notes,
+total_reading_minutes,
+first_publish_year,
+created_at::text AS created_at,
+updated_at::text AS updated_at
+""".strip()
+
 def _resolve_progress_date(value: str | None) -> str:
     if value is None:
         return date.today().isoformat()
@@ -35,7 +70,7 @@ def _resolve_progress_date(value: str | None) -> str:
 
 def _refresh_book_current_page(cursor: Any, book_id: str) -> dict[str, Any]:
     cursor.execute(
-        """
+        f"""
         UPDATE books
         SET currentPage = (
             SELECT page_number
@@ -46,29 +81,7 @@ def _refresh_book_current_page(cursor: Any, book_id: str) -> dict[str, Any]:
         )
         WHERE id = %s AND user_id = %s
         RETURNING
-            id::text AS id,
-            user_id::text AS user_id,
-            title,
-            author,
-            status,
-            rating,
-            isbn,
-            pages,
-            publisher,
-            language_code,
-            cover_url,
-            series_id,
-            volume,
-            genre_id,
-            age_category,
-            release_date::text AS release_date,
-            format,
-            description,
-            currentPage AS "currentPage",
-            reading_start_date::text AS reading_start_date,
-            reading_end_date::text AS reading_end_date,
-            created_at::text AS created_at,
-            updated_at::text AS updated_at
+            {_BOOK_RESPONSE_COLUMNS}
         """,
         (book_id, DEFAULT_USER_ID, book_id, DEFAULT_USER_ID),
     )
@@ -80,7 +93,7 @@ def _refresh_book_current_page(cursor: Any, book_id: str) -> dict[str, Any]:
 def _upsert_series(connection: Any, series_name: str) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            """
+            f"""
             INSERT INTO series (user_id, name)
             VALUES (%s, %s)
             ON CONFLICT (user_id, name) DO NOTHING
@@ -92,7 +105,7 @@ def _upsert_series(connection: Any, series_name: str) -> None:
 def _upsert_genre(connection: Any, genre_name: str) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            """
+            f"""
             INSERT INTO genres (user_id, name, is_active)
             VALUES (%s, %s, true)
             ON CONFLICT (user_id, name)
@@ -109,31 +122,9 @@ def list_books() -> list[dict[str, Any]]:
 
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 SELECT
-                    id::text AS id,
-                    user_id::text AS user_id,
-                    title,
-                    author,
-                    status,
-                    rating,
-                    isbn,
-                    pages,
-                    publisher,
-                    language_code,
-                    cover_url,
-                    series_id,
-                    volume,
-                    genre_id,
-                    age_category,
-                    release_date::text AS release_date,
-                    format,
-                    description,
-                    currentPage AS "currentPage",
-                    reading_start_date::text AS reading_start_date,
-                    reading_end_date::text AS reading_end_date,
-                    created_at::text AS created_at,
-                    updated_at::text AS updated_at
+            {_BOOK_RESPONSE_COLUMNS}
                 FROM books
                 WHERE user_id = %s
                 ORDER BY title ASC
@@ -170,37 +161,17 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
 
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 INSERT INTO books (
                     user_id, title, author, status, rating, isbn, pages, publisher, language_code, cover_url,
                     series_id, volume, genre_id, age_category, release_date, format,
-                    description, currentPage, reading_start_date, reading_end_date
+                    description, currentPage, reading_start_date, reading_end_date,
+                    how_acquired, where_acquired, author_origin_id, author_gender, acquired_on,
+                    price, notes, total_reading_minutes, first_publish_year
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING
-                    id::text AS id,
-                    user_id::text AS user_id,
-                    title,
-                    author,
-                    status,
-                    rating,
-                    isbn,
-                    pages,
-                    publisher,
-                    language_code,
-                    cover_url,
-                    series_id,
-                    volume,
-                    genre_id,
-                    age_category,
-                    release_date::text AS release_date,
-                    format,
-                    description,
-                    currentPage AS "currentPage",
-                    reading_start_date::text AS reading_start_date,
-                    reading_end_date::text AS reading_end_date,
-                    created_at::text AS created_at,
-                    updated_at::text AS updated_at
+            {_BOOK_RESPONSE_COLUMNS}
                 """,
                 (
                     DEFAULT_USER_ID,
@@ -223,6 +194,15 @@ def create_book(payload: CreateBookRequest) -> dict[str, Any]:
                     current_page,
                     payload.reading_start_date,
                     payload.reading_end_date,
+                    payload.how_acquired.strip().lower() if payload.how_acquired else None,
+                    payload.where_acquired.strip() if payload.where_acquired else None,
+                    payload.author_origin_id.strip() if payload.author_origin_id else None,
+                    payload.author_gender.strip().lower() if payload.author_gender else None,
+                    payload.acquired_on,
+                    payload.price,
+                    payload.notes.strip() if payload.notes else None,
+                    payload.total_reading_minutes,
+                    payload.first_publish_year,
                 ),
             )
             return cursor.fetchone()
@@ -256,7 +236,7 @@ def update_book(
 
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 UPDATE books
                 SET title = %s,
                     author = %s,
@@ -276,32 +256,19 @@ def update_book(
                     description = %s,
                     currentPage = %s,
                     reading_start_date = %s,
-                    reading_end_date = %s
+                    reading_end_date = %s,
+                    how_acquired = %s,
+                    where_acquired = %s,
+                    author_origin_id = %s,
+                    author_gender = %s,
+                    acquired_on = %s,
+                    price = %s,
+                    notes = %s,
+                    total_reading_minutes = %s,
+                    first_publish_year = %s
                 WHERE id = %s AND user_id = %s
                 RETURNING
-                    id::text AS id,
-                    user_id::text AS user_id,
-                    title,
-                    author,
-                    status,
-                    rating,
-                    isbn,
-                    pages,
-                    publisher,
-                    language_code,
-                    cover_url,
-                    series_id,
-                    volume,
-                    genre_id,
-                    age_category,
-                    release_date::text AS release_date,
-                    format,
-                    description,
-                    currentPage AS "currentPage",
-                    reading_start_date::text AS reading_start_date,
-                    reading_end_date::text AS reading_end_date,
-                    created_at::text AS created_at,
-                    updated_at::text AS updated_at
+            {_BOOK_RESPONSE_COLUMNS}
                 """,
                 (
                     payload.title.strip(),
@@ -323,6 +290,15 @@ def update_book(
                     current_page,
                     payload.reading_start_date,
                     payload.reading_end_date,
+                    payload.how_acquired.strip().lower() if payload.how_acquired else None,
+                    payload.where_acquired.strip() if payload.where_acquired else None,
+                    payload.author_origin_id.strip() if payload.author_origin_id else None,
+                    payload.author_gender.strip().lower() if payload.author_gender else None,
+                    payload.acquired_on,
+                    payload.price,
+                    payload.notes.strip() if payload.notes else None,
+                    payload.total_reading_minutes,
+                    payload.first_publish_year,
                     book_id,
                     DEFAULT_USER_ID,
                 ),
@@ -340,7 +316,7 @@ def list_reading_progress(book_id: str) -> list[dict[str, Any]]:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 SELECT 1
                 FROM books
                 WHERE id = %s AND user_id = %s
@@ -351,7 +327,7 @@ def list_reading_progress(book_id: str) -> list[dict[str, Any]]:
                 raise HTTPException(status_code=404, detail="Book not found")
 
             cursor.execute(
-                """
+                f"""
                 SELECT
                     id::text AS id,
                     book_id::text AS book_id,
@@ -379,7 +355,7 @@ def record_reading_progress(
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 SELECT status, pages
                 FROM books
                 WHERE id = %s AND user_id = %s
@@ -405,7 +381,7 @@ def record_reading_progress(
                 )
 
             cursor.execute(
-                """
+                f"""
                 INSERT INTO reading_progress_entries (
                     book_id, user_id, progress_date, page_number
                 )
@@ -419,7 +395,7 @@ def record_reading_progress(
             )
 
             cursor.execute(
-                """
+                f"""
                 UPDATE books
                 SET currentPage = (
                     SELECT page_number
@@ -430,29 +406,7 @@ def record_reading_progress(
                 )
                 WHERE id = %s AND user_id = %s
                 RETURNING
-                    id::text AS id,
-                    user_id::text AS user_id,
-                    title,
-                    author,
-                    status,
-                    rating,
-                    isbn,
-                    pages,
-                    publisher,
-                    language_code,
-                    cover_url,
-                    series_id,
-                    volume,
-                    genre_id,
-                    age_category,
-                    release_date::text AS release_date,
-                    format,
-                    description,
-                    currentPage AS "currentPage",
-                    reading_start_date::text AS reading_start_date,
-                    reading_end_date::text AS reading_end_date,
-                    created_at::text AS created_at,
-                    updated_at::text AS updated_at
+            {_BOOK_RESPONSE_COLUMNS}
                 """,
                 (book_id, DEFAULT_USER_ID, book_id, DEFAULT_USER_ID),
             )
@@ -475,7 +429,7 @@ def update_reading_progress(
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 SELECT status, pages
                 FROM books
                 WHERE id = %s AND user_id = %s
@@ -499,7 +453,7 @@ def update_reading_progress(
                 )
 
             cursor.execute(
-                """
+                f"""
                 SELECT id
                 FROM reading_progress_entries
                 WHERE id = %s AND book_id = %s AND user_id = %s
@@ -510,7 +464,7 @@ def update_reading_progress(
                 raise HTTPException(status_code=404, detail="Progress entry not found")
 
             cursor.execute(
-                """
+                f"""
                 DELETE FROM reading_progress_entries
                 WHERE book_id = %s
                   AND user_id = %s
@@ -520,7 +474,7 @@ def update_reading_progress(
                 (book_id, DEFAULT_USER_ID, progress_date, progress_id),
             )
             cursor.execute(
-                """
+                f"""
                 UPDATE reading_progress_entries
                 SET progress_date = %s,
                     page_number = %s
@@ -536,7 +490,7 @@ def delete_reading_progress(book_id: str, progress_id: str) -> dict[str, Any]:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 DELETE FROM reading_progress_entries
                 WHERE id = %s AND book_id = %s AND user_id = %s
                 RETURNING id
@@ -553,7 +507,7 @@ def delete_book(book_id: str) -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
+                f"""
                 DELETE FROM books
                 WHERE id = %s AND user_id = %s
                 RETURNING id, series_id
@@ -565,7 +519,7 @@ def delete_book(book_id: str) -> None:
             if deleted is not None and deleted.get("series_id") is not None:
                 deleted_series = deleted["series_id"]
                 cursor.execute(
-                    """
+                    f"""
                     SELECT 1
                     FROM books
                     WHERE user_id = %s AND series_id = %s
@@ -576,7 +530,7 @@ def delete_book(book_id: str) -> None:
                 has_more = cursor.fetchone() is not None
                 if not has_more:
                     cursor.execute(
-                        """
+                        f"""
                         DELETE FROM series
                         WHERE user_id = %s AND name = %s
                         """,
