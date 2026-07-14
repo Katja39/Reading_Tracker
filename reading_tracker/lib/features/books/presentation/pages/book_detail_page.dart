@@ -1,4 +1,8 @@
+//
 // Book detail screen for viewing, editing, deleting, rating and tracking a single book
+//
+
+
 import 'package:flutter/material.dart';
 
 import '../../domain/models/book.dart';

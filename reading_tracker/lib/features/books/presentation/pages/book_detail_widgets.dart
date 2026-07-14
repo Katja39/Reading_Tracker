@@ -1,5 +1,6 @@
+//
 // Detail page widgets for rows, sections, header rating, status, and reading progress
-
+//
 
 
 part of 'book_detail_page.dart';

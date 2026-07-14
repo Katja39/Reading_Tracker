@@ -1,9 +1,15 @@
+//
+// Shared book form dialog for creating and editing book metadata
+//
+
+
 import 'package:flutter/material.dart';
 
 import '../../domain/models/book.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../../../metadata/domain/models/book_enrichment.dart';
 
+// Return value containing normalized form input
 class BookFormResult {
   const BookFormResult({
     required this.title,
@@ -44,6 +50,7 @@ class BookFormResult {
   final int? currentPage;
 }
 
+// Dialog that captures book metadata, optional rating, series, and genre data
 class BookFormDialog extends StatefulWidget {
   const BookFormDialog({
     super.key,
@@ -72,6 +79,7 @@ class BookFormDialog extends StatefulWidget {
   State<BookFormDialog> createState() => _BookFormDialogState();
 }
 
+// Owns form controllers, selected options, async loading state, and submit handling
 class _BookFormDialogState extends State<BookFormDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorController;
@@ -104,8 +112,10 @@ class _BookFormDialogState extends State<BookFormDialog> {
   String? _selectedGenre;
   String? _autoFillMessage;
 
+  // Whether the dialog is editing an existing book
   bool get _isEditing => widget.initialBook != null;
 
+  // Initializes controllers from the existing book or empty add-book defaults
   @override
   void initState() {
     super.initState();
@@ -159,6 +169,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     _loadSeriesOptions();
   }
 
+  // Cleans up every controller created for the form
   @override
   void dispose() {
     _titleController.removeListener(_handleRequiredFieldChanged);
@@ -178,11 +189,13 @@ class _BookFormDialogState extends State<BookFormDialog> {
     super.dispose();
   }
 
+  // Enables submit only after required text fields are filled
   bool get _isSubmitEnabled {
     return _titleController.text.trim().isNotEmpty &&
         _authorController.text.trim().isNotEmpty;
   }
 
+  // Refreshes button state when required fields change
   void _handleRequiredFieldChanged() {
     if (!mounted) {
       return;
@@ -190,6 +203,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     setState(() {});
   }
 
+  // Chooses a valid initial status from the book, caller, or default list
   String _resolveInitialStatus(Book? initialBook) {
     final candidate = initialBook?.status ?? widget.initialStatus;
     if (candidate != null && widget.statuses.contains(candidate)) {
@@ -198,6 +212,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     return _defaultStatus;
   }
 
+  // Normalizes form values and returns them to the caller
   void _submit() {
     final pagesText = _pagesController.text.trim();
     final pages = pagesText.isEmpty ? null : int.tryParse(pagesText);
@@ -250,6 +265,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     );
   }
 
+  // Creates a new genre option from the custom input
   void _addCustomGenre() {
     final value = _genreIdController.text.trim();
     if (value.isEmpty) {
@@ -262,6 +278,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     });
   }
 
+  // Clears the selected genre from the current form state
   void _removeSelectedGenre() {
     final selected = _selectedGenre;
     if (selected == null) {
@@ -274,6 +291,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     });
   }
 
+  // Confirms genre deletion when existing books reference it
   Future<void> _confirmAndRemoveGenre(String genre) async {
     final books = await widget.repository.fetchBooks();
     final linkedBooks = books.where((book) => book.genreId == genre).toList();
@@ -326,6 +344,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     await widget.onBooksChanged?.call();
   }
 
+  // Loads available series names for the series picker
   Future<void> _loadSeriesOptions() async {
     setState(() {
       _isLoadingSeries = true;
@@ -358,6 +377,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     }
   }
 
+  // Loads available genre names for the genre picker
   Future<void> _loadGenreOptions() async {
     try {
       final options = await widget.repository.fetchGenreNames();
@@ -380,6 +400,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     }
   }
 
+  // Creates a new series and selects it after the list refreshes
   Future<void> _createSeries() async {
     final name = _newSeriesController.text.trim();
     if (name.isEmpty) {
@@ -418,6 +439,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     }
   }
 
+  // Confirms series deletion when existing books reference it
   Future<void> _confirmAndRemoveSeries(String series) async {
     final books = await widget.repository.fetchBooks();
     final linkedBooks = books.where((book) => book.seriesId == series).toList();
@@ -469,6 +491,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     await widget.onBooksChanged?.call();
   }
 
+  // Fetches metadata for the entered ISBN and applies it to the form
   Future<void> _autoFillFromIsbn() async {
     final isbn = _isbnController.text.trim();
     if (isbn.isEmpty) {
@@ -515,6 +538,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     }
   }
 
+  // Applies fetched book metadata without overwriting fields with empty values
   void _applyEnrichment(BookEnrichment enrichment) {
     setState(() {
       if (enrichment.title != null && enrichment.title!.isNotEmpty) {
@@ -566,6 +590,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     });
   }
 
+  // Switches field groups between stacked and two-column layouts
   Widget _buildResponsiveFields(Widget left, Widget right, bool useTwoColumns) {
     if (!useTwoColumns) {
       return Column(
@@ -586,6 +611,7 @@ class _BookFormDialogState extends State<BookFormDialog> {
     );
   }
 
+  // Builds the add or edit dialog form
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -950,9 +976,6 @@ class _BookFormDialogState extends State<BookFormDialog> {
                 useTwoColumns,
               ),
               const SizedBox(height: 16),
-              if (_selectedStatus == 'reading') ...[
-                //
-              ],
               TextField(
                 controller: _descriptionController,
                 minLines: 3,

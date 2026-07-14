@@ -1,5 +1,11 @@
+//
+// Dialog for creating or editing a dated reading-progress entry
+//
+
+
 import 'package:flutter/material.dart';
 
+// Return value containing the entered page and selected progress date
 class ReadingProgressUpdateResult {
   const ReadingProgressUpdateResult({
     required this.pageNumber,
@@ -10,6 +16,7 @@ class ReadingProgressUpdateResult {
   final String progressDate;
 }
 
+// Modal input for page number and progress date
 class ReadingProgressUpdateDialog extends StatefulWidget {
   const ReadingProgressUpdateDialog({
     super.key,
@@ -27,11 +34,13 @@ class ReadingProgressUpdateDialog extends StatefulWidget {
       _ReadingProgressUpdateDialogState();
 }
 
+// Owns the page controller and selected date for the progress dialog
 class _ReadingProgressUpdateDialogState
     extends State<ReadingProgressUpdateDialog> {
   late final TextEditingController _controller;
   late DateTime _selectedDate;
 
+  // Initializes the page field and uses today when no date is provided
   @override
   void initState() {
     super.initState();
@@ -47,12 +56,14 @@ class _ReadingProgressUpdateDialogState
         : DateTime(parsedDate.year, parsedDate.month, parsedDate.day);
   }
 
+  // Disposes the page number controller
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  // Formats the selected date for backend storage
   String _dateIsoString(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -60,6 +71,7 @@ class _ReadingProgressUpdateDialogState
     return '$year-$month-$day';
   }
 
+  // Formats the selected date for display in the dialog
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -67,6 +79,7 @@ class _ReadingProgressUpdateDialogState
     return '$day.$month.$year';
   }
 
+  // Opens the date picker and stores the selected day
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -90,6 +103,7 @@ class _ReadingProgressUpdateDialogState
     });
   }
 
+  // Returns the parsed page number and selected date to the caller
   void _submit() {
     final page = int.tryParse(_controller.text.trim());
     Navigator.of(context).pop(
@@ -100,6 +114,7 @@ class _ReadingProgressUpdateDialogState
     );
   }
 
+  // Builds the page input and date picker action
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

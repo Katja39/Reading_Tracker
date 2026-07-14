@@ -1,7 +1,13 @@
+//
+// Shared progress summary with a bar, label, and update button
+//
+
+
 import 'package:flutter/material.dart';
 
 import '../../../../shared/theme/app_tokens.dart';
 
+// Renders reading progress consistently across detail and home screens
 class ReadingProgressSummary extends StatelessWidget {
   const ReadingProgressSummary({
     super.key,
@@ -22,10 +28,12 @@ class ReadingProgressSummary extends StatelessWidget {
   final double minBarWidth;
   final double maxBarWidth;
 
+  // Whether a determinate percentage can be calculated
   bool get _hasTotalPages {
     return pages != null && pages! > 0;
   }
 
+  // Converts page progress into a clamped progress-bar value
   double get _progressValue {
     final current = currentPage;
     final total = pages;
@@ -36,6 +44,7 @@ class ReadingProgressSummary extends StatelessWidget {
     return (current / total).clamp(0.0, 1.0).toDouble();
   }
 
+  // Builds the percentage label or missing-pages fallback
   String get _progressText {
     if (!_hasTotalPages) {
       return 'Pages missing';
@@ -44,9 +53,13 @@ class ReadingProgressSummary extends StatelessWidget {
     return '${(_progressValue * 100).round()}%';
   }
 
+  // Uses shared button dimensions for compact and regular variants
   ButtonStyle _buttonStyle() {
     return FilledButton.styleFrom(
-      minimumSize: Size(0, compact ? AppSizes.compactButtonHeight : AppSizes.buttonHeight),
+      minimumSize: Size(
+        0,
+        compact ? AppSizes.compactButtonHeight : AppSizes.buttonHeight,
+      ),
       padding: compact ? AppInsets.compactButton : AppInsets.button,
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       shape: RoundedRectangleBorder(
@@ -55,6 +68,7 @@ class ReadingProgressSummary extends StatelessWidget {
     );
   }
 
+  // Applies either full-width or constrained sizing to each row
   Widget _widthBox({required Widget child}) {
     if (fillWidth) {
       return SizedBox(width: double.infinity, child: child);
@@ -69,6 +83,7 @@ class ReadingProgressSummary extends StatelessWidget {
     );
   }
 
+  // Builds the progress bar, page label, and update action
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

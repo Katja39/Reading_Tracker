@@ -1,6 +1,13 @@
+//
+// Library tab section for book list controls, rows, and actions
+//
+
+
 part of 'library_page.dart';
 
+// Adds library tab builders to the library page state
 extension _LibraryPageSections on _LibraryPageState {
+  // Chooses how many configurable columns fit on the current width
   int _maxVariableColumns(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= 1550) {
@@ -18,10 +25,12 @@ extension _LibraryPageSections on _LibraryPageState {
     return 2;
   }
 
+  // Keeps library and home content aligned to the shared layout width
   double _responsiveContentWidth(BuildContext context) {
     return AppLayout.libraryContentWidth(context);
   }
 
+  // Builds the full library tab with toolbar, table, and actions
   Widget _buildLibraryTab(ThemeData theme, List<Book> books) {
     final maxWidth = _responsiveContentWidth(context);
     final isMobile = MediaQuery.sizeOf(context).width < 700;
@@ -77,6 +86,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds search and sort or filter controls for mobile and desktop
   Widget _buildLibraryToolbar(ThemeData theme) {
     final isMobile = MediaQuery.sizeOf(context).width < 700;
 
@@ -210,6 +220,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds the compact mobile sort selector
   Widget _buildMobileSortControl(ThemeData theme) {
     return SizedBox(
       height: 36,
@@ -276,6 +287,8 @@ extension _LibraryPageSections on _LibraryPageState {
       ),
     );
   }
+
+  // Builds a reusable mobile library control button
   Widget _buildLibraryControlButton(
     ThemeData theme, {
     required String label,
@@ -304,6 +317,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Shows the active filter with a reset action nearby
   Widget _buildActiveFilterBanner(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -335,6 +349,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds the mobile card based library list
   Widget _buildMobileLibraryCard(ThemeData theme, List<Book> books) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -355,6 +370,8 @@ extension _LibraryPageSections on _LibraryPageState {
             ),
     );
   }
+
+  // Builds the desktop table container
   Widget _buildLibraryCard(
     ThemeData theme,
     List<Book> books,
@@ -401,6 +418,8 @@ extension _LibraryPageSections on _LibraryPageState {
             ),
     );
   }
+
+  // Builds the desktop table header row
   Widget _buildLibraryHeader(
     ThemeData theme,
     List<_LibraryField> visibleFields,
@@ -448,6 +467,7 @@ extension _LibraryPageSections on _LibraryPageState {
     return Row(children: children);
   }
 
+  // Builds one desktop table row
   Widget _buildLibraryRow(
     ThemeData theme,
     Book entry,
@@ -497,6 +517,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds one tappable mobile book row
   Widget _buildMobileLibraryRow(ThemeData theme, Book entry) {
     final selectedInfos = _mobileInfoFields
         .map((field) => (field, _mobileInfoValue(entry, field)))
@@ -565,6 +586,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds a compact mobile info chip
   Widget _buildMobileInfoChip(
     ThemeData theme, {
     required Book book,
@@ -603,6 +625,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds specialized field values such as ratings or plain text
   Widget _buildLibraryFieldValueWidget(
     ThemeData theme,
     Book entry,
@@ -626,6 +649,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds the primary title and author block for mobile cards
   Widget _buildMobilePrimaryInfo(
     ThemeData theme,
     Book entry,
@@ -652,6 +676,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Renders filled and empty rating stars
   Widget _buildRatingStars(
     ThemeData theme,
     double? rating, {
@@ -687,6 +712,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds a cover image with a fallback state
   Widget _buildBookCover(
     Book entry, {
     required double width,
@@ -709,6 +735,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds the placeholder shown when no cover image is available
   Widget _buildCoverFallback(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
@@ -722,6 +749,7 @@ extension _LibraryPageSections on _LibraryPageState {
     );
   }
 
+  // Builds bottom actions for adding books and showing save state
   Widget _buildLibraryActions() {
     return Row(
       children: [

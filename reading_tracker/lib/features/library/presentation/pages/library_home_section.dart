@@ -1,6 +1,13 @@
+//
+// Home tab section for currently reading books
+//
+
+
 part of 'library_page.dart';
 
+// Adds home tab builders to the library page state
 extension _LibraryPageHomeSection on _LibraryPageState {
+  // Builds the currently reading horizontal list
   Widget _buildStartTab(ThemeData theme) {
     final maxWidth = _responsiveContentWidth(context);
     final readingBooks = _books
@@ -68,6 +75,7 @@ extension _LibraryPageHomeSection on _LibraryPageState {
     );
   }
 
+  // Opens the compact progress update dialog from the home tab
   Future<void> _showHomeUpdateCurrentPageDialog(Book book) async {
     final submitted = await showDialog<ReadingProgressUpdateResult>(
       context: context,
@@ -142,6 +150,7 @@ extension _LibraryPageHomeSection on _LibraryPageState {
       }
     }
   }
+  // Chooses a responsive card width for the home carousel
   double _homeBookCardWidth(double availableWidth) {
     if (availableWidth >= 900) {
       return AppSizes.homeReadingCardWidthLarge;
@@ -152,6 +161,7 @@ extension _LibraryPageHomeSection on _LibraryPageState {
     return AppSizes.homeReadingCardWidthSmall;
   }
 
+  // Chooses a responsive cover width for the home carousel
   double _homeBookCoverWidth(double availableWidth) {
     if (availableWidth >= 900) {
       return AppSizes.homeReadingCoverWidthLarge;
@@ -162,6 +172,7 @@ extension _LibraryPageHomeSection on _LibraryPageState {
     return AppSizes.homeReadingCoverWidthSmall;
   }
 
+  // Builds one currently reading card with cover and compact progress
   Widget _buildCurrentlyReadingCard(
     ThemeData theme,
     Book book, {

@@ -1,3 +1,8 @@
+//
+// Main library screen with tabs, filtering, sorting, search, and navigation
+//
+
+
 import 'package:flutter/material.dart';
 
 import '../../../books/domain/models/book.dart';
@@ -14,6 +19,7 @@ part 'library_home_section.dart';
 part 'library_section.dart';
 part 'library_statistics_section.dart';
 
+// Configurable book fields used by sorting, filtering, searching, and display
 enum _LibraryField {
   title,
   author,
@@ -32,12 +38,14 @@ enum _LibraryField {
   format,
 }
 
+// Bottom sheet sections opened from library controls
 enum _LibraryControlPanel {
   sort,
   filter,
   display,
 }
 
+// Entry screen that owns library state and shared navigation tabs
 class LibraryPage extends StatefulWidget {
   const LibraryPage({
     super.key,
@@ -54,6 +62,7 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
+// Owns book data, loading state, filters, sorting, search, and selected tab
 class _LibraryPageState extends State<LibraryPage> {
   static const _menuActionSortFilter = 'sort_filter';
   static const _menuActionResetFilter = 'reset_filter';
@@ -119,13 +128,16 @@ class _LibraryPageState extends State<LibraryPage> {
   late final TextEditingController _pagesFilterMaxController;
   String _searchQuery = '';
 
+  // Fields that can be configured in the desktop table and mobile cards
   List<_LibraryField> get _availableConfigurableFields => _configurableFields;
 
+  // Whether the pages filter has at least one active bound
   bool get _hasPagesRangeFilter {
     return _pagesFilterMinController.text.trim().isNotEmpty ||
         _pagesFilterMaxController.text.trim().isNotEmpty;
   }
 
+  // Whether any filter currently changes the library result set
   bool get _hasActiveFilter {
     if (_filterField == _LibraryField.pages) {
       return _hasPagesRangeFilter;
@@ -133,6 +145,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return _filterValue != 'all';
   }
 
+  // Human-readable summary for the active filter banner
   String get _activeFilterSummary {
     final label = _fieldLabel(_filterField);
     if (_filterField == _LibraryField.pages) {
@@ -152,6 +165,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return '$label: ${_formatFilterOptionLabel(_filterValue)}';
   }
 
+  // Initializes filter controllers and loads books from the repository
   @override
   void initState() {
     super.initState();
@@ -161,6 +175,7 @@ class _LibraryPageState extends State<LibraryPage> {
     _loadBooks();
   }
 
+  // Disposes search and page-range filter controllers
   @override
   void dispose() {
     _searchController.dispose();
@@ -169,6 +184,7 @@ class _LibraryPageState extends State<LibraryPage> {
     super.dispose();
   }
 
+  // Loads all books and updates loading or error state
   Future<void> _loadBooks() async {
     setState(() {
       _isLoading = true;
@@ -201,6 +217,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Opens the add book dialog and persists a submitted book
   Future<void> _showAddBookDialog() async {
     final submitted = await showDialog<BookFormResult>(
       context: context,
@@ -281,6 +298,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Compares two books by the selected library field
   int _compareBooksByField(Book left, Book right, _LibraryField field) {
     switch (field) {
       case _LibraryField.rating:
@@ -298,6 +316,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Applies the selected sort field and direction
   List<Book> _sortBooks(List<Book> books) {
     final sortedBooks = [...books];
     sortedBooks.sort((left, right) {
@@ -307,6 +326,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return sortedBooks;
   }
 
+  // Applies the selected field filter or page range
   List<Book> _filterBooks(List<Book> books) {
     if (_filterField == _LibraryField.pages) {
       final minPages = int.tryParse(_pagesFilterMinController.text.trim());
@@ -340,6 +360,7 @@ class _LibraryPageState extends State<LibraryPage> {
         .toList();
   }
 
+  // Searches across every configured book field
   List<Book> _searchBooks(List<Book> books) {
     final query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) {
@@ -353,6 +374,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }).toList();
   }
 
+  // Converts internal field ids into visible labels
   String _fieldLabel(_LibraryField field) {
     switch (field) {
       case _LibraryField.title:
@@ -388,6 +410,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Returns raw values used for filtering and sorting
   String _fieldFilterValue(Book book, _LibraryField field) {
     switch (field) {
       case _LibraryField.title:
@@ -423,6 +446,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Returns formatted values used in the visible library UI
   String _fieldDisplayValue(Book book, _LibraryField field) {
     switch (field) {
       case _LibraryField.status:
@@ -436,12 +460,14 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Builds searchable text for raw and formatted field values
   String _fieldSearchValue(Book book, _LibraryField field) {
     final raw = _fieldFilterValue(book, field).toLowerCase();
     final display = _fieldDisplayValue(book, field).toLowerCase();
     return raw == display ? raw : '$raw $display';
   }
 
+  // Builds available filter values for the selected filter field
   List<String> _filterOptions() {
     if (_filterField == _LibraryField.status) {
       return _bookStatuses;
@@ -456,6 +482,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return values;
   }
 
+  // Builds dropdown items from configurable library fields
   List<DropdownMenuItem<_LibraryField>> _buildFieldItems(
     Iterable<_LibraryField> fields,
   ) {
@@ -469,6 +496,7 @@ class _LibraryPageState extends State<LibraryPage> {
         .toList();
   }
 
+  // Formats optional ratings for display and filtering
   String _formatRating(double? rating) {
     if (rating == null) {
       return 'No rating';
@@ -479,6 +507,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return '$normalizedRating/5';
   }
 
+  // Estimates a column flex value from the longest visible value
   int _columnFlexForValues(Iterable<String> values) {
     final maxLength = values.fold<int>(
       0,
@@ -497,6 +526,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return 4;
   }
 
+  // Keeps the title column compact while preserving readability
   int _titleColumnFlex(List<Book> books) {
     final baseFlex = _columnFlexForValues([
       _fieldLabel(_LibraryField.title),
@@ -507,6 +537,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return reducedFlex > 2 ? 2 : reducedFlex;
   }
 
+  // Sizes configurable library columns by their content
   int _libraryFieldFlex(List<Book> books, _LibraryField field) {
     final baseFlex = _columnFlexForValues([
       _fieldLabel(field),
@@ -516,6 +547,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return baseFlex < 2 ? 2 : baseFlex;
   }
 
+  // Swaps a selected desktop column into the requested position
   void _updateLibraryFieldAtIndex({
     required int index,
     required _LibraryField field,
@@ -538,6 +570,7 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
+  // Adds or removes a field from the mobile card info list
   void _toggleMobileInfoField(_LibraryField field, bool isSelected) {
     setState(() {
       if (isSelected) {
@@ -558,6 +591,7 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
+  // Builds the popup menu used to change table columns
   List<PopupMenuEntry<_LibraryField>> _libraryFieldMenuItems(
     _LibraryField selectedField,
   ) {
@@ -572,6 +606,7 @@ class _LibraryPageState extends State<LibraryPage> {
         .toList();
   }
 
+  // Builds a table header that can optionally change its field
   Widget _buildColumnHeader(
     ThemeData theme, {
     required String label,
@@ -622,6 +657,7 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
+  // Formats filter option labels for visible controls
   String _formatFilterOptionLabel(String value) {
     switch (_filterField) {
       case _LibraryField.status:
@@ -634,6 +670,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Converts underscore style values into readable labels
   String _formatReadableLabel(String? value) {
     if (value == null || value.isEmpty || value == '-') {
       return '-';
@@ -645,10 +682,12 @@ class _LibraryPageState extends State<LibraryPage> {
         .join(' ');
   }
 
+  // Resolves the visible value for a mobile info chip
   String _mobileInfoValue(Book book, _LibraryField field) {
     return _fieldDisplayValue(book, field);
   }
 
+  // Hides empty or unhelpful mobile info values
   bool _shouldHideMobileInfoValue(_LibraryField field, String value) {
     if (value == '-') {
       return true;
@@ -659,6 +698,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return false;
   }
 
+  // Restores default sort, filter, column, and mobile display settings
   void _resetSortAndFilter() {
     setState(() {
       _filterField = _LibraryField.status;
@@ -672,6 +712,7 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
+  // Opens the sort, filter, and display bottom sheet
   Future<void> _openSortFilterSheet(
     ThemeData theme, {
     required bool isMobile,
@@ -888,6 +929,7 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
+  // Opens book details and reconciles updated or deleted books locally
   Future<void> _openBookDetails(Book book) async {
     final result = await Navigator.of(context).push<BookDetailResult>(
       MaterialPageRoute<BookDetailResult>(
@@ -916,6 +958,7 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
+  // Builds the responsive tab shell and top level navigation
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1019,6 +1062,7 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 }
 
+// Desktop navigation button for switching between top-level tabs
 class _TopNavButton extends StatelessWidget {
   const _TopNavButton({
     required this.label,
@@ -1030,6 +1074,7 @@ class _TopNavButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onPressed;
 
+  // Builds a selected or unselected top navigation action
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1055,10 +1100,3 @@ class _TopNavButton extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-

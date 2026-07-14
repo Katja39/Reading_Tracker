@@ -1,4 +1,6 @@
+//
 // Dialog helpers used by BookDetailPage for editing book metadata and ratings
+//
 
 
 part of 'book_detail_page.dart';
